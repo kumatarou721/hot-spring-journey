@@ -189,13 +189,14 @@
       </div>
       
       <div id="header-status" class="flex items-center gap-2 sm:gap-4 text-xs font-mono hidden">
-        <div class="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded bg-slate-900/80 border border-slate-700/50 shadow-inner-light">
-          <span class="text-slate-500 font-bold hidden sm:inline">MKT:</span>
-          <span id="market-regime-badge" class="font-bold text-white tracking-wide">--</span>
+        <div id="market-health-header" class="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded bg-slate-900/80 border border-slate-700/50 shadow-inner-light">
+          <span class="text-slate-500 font-bold hidden sm:inline">HEALTH:</span>
+          <span id="market-health-score" class="font-bold text-white tracking-wide">--</span>
+          <span id="market-health-grade" class="text-[10px] font-mono px-1.5 py-0.5 rounded border">--</span>
         </div>
-        <div id="risk-appetite-header" class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border hidden">
-          <span id="risk-appetite-header-icon" class="text-sm">⚠️</span>
-          <span id="risk-appetite-header-score" class="font-bold">--</span>
+        <div id="leading-alert-header" class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border hidden">
+          <span id="leading-alert-header-icon" class="text-sm">⚠️</span>
+          <span id="leading-alert-header-text" class="font-bold text-[10px]">--</span>
         </div>
         <div class="text-slate-500 hidden sm:block border-l border-slate-800 pl-4" id="header-date">--</div>
       </div>
@@ -327,21 +328,86 @@
           </div>
 
 
-          <!-- Risk Appetite Directive Alert (Ver 27.4) -->
-          <div id="risk-appetite-alert" class="hidden p-1 rounded-xl transition-all duration-300">
+          <!-- Market Health Score (Ver 30.0) -->
+          <div id="market-health-panel" class="p-1 rounded-xl transition-all duration-300 bg-gradient-to-r from-slate-800/50 to-transparent border border-slate-700/30">
             <div class="bg-slate-900/80 backdrop-blur rounded-lg p-4">
-              <div class="flex items-start gap-4">
-                <div id="risk-appetite-icon" class="p-2.5 rounded-lg flex-shrink-0"></div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <h3 id="risk-appetite-title" class="font-display font-bold text-sm tracking-wide">--</h3>
-                    <span id="risk-appetite-score" class="text-[10px] font-mono px-2 py-0.5 rounded">--</span>
+              <!-- Score Header -->
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div id="health-icon" class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                   </div>
-                  <p id="risk-appetite-desc" class="text-xs text-slate-400 mt-0.5 font-mono">--</p>
-                  <div id="risk-appetite-indicators" class="mt-3 flex flex-wrap gap-1.5"></div>
+                  <div>
+                    <h3 class="font-display font-bold text-sm tracking-wide text-white">MARKET HEALTH</h3>
+                    <p id="health-grade-text" class="text-xs text-slate-400 font-mono">--</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div id="health-score-display" class="text-3xl font-mono font-bold text-white">--</div>
+                  <div class="text-[10px] text-slate-500 font-mono">/100</div>
                 </div>
               </div>
-              <div id="risk-appetite-action" class="mt-4 pt-3 border-t border-slate-700/50 hidden">
+
+              <!-- Component Bars -->
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-slate-500 w-16 font-mono">Trend</span>
+                  <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="bar-trend" class="h-full bg-blue-500 rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                  <span id="score-trend" class="text-[10px] text-slate-400 font-mono w-10 text-right">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-slate-500 w-16 font-mono">Breadth</span>
+                  <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="bar-breadth" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                  <span id="score-breadth" class="text-[10px] text-slate-400 font-mono w-10 text-right">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-slate-500 w-16 font-mono">Volatility</span>
+                  <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="bar-volatility" class="h-full bg-purple-500 rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                  <span id="score-volatility" class="text-[10px] text-slate-400 font-mono w-10 text-right">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-slate-500 w-16 font-mono">Leading</span>
+                  <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="bar-leading" class="h-full bg-amber-500 rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                  <span id="score-leading" class="text-[10px] text-slate-400 font-mono w-10 text-right">--</span>
+                </div>
+              </div>
+
+              <!-- Action Summary -->
+              <div id="health-action" class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-slate-500">Action:</span>
+                  <span id="health-position" class="font-mono text-slate-300">--</span>
+                  <span class="text-slate-600">|</span>
+                  <span id="health-tier" class="font-mono text-slate-300">--</span>
+                  <span class="text-slate-600">|</span>
+                  <span id="health-rr" class="font-mono text-slate-300">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leading Indicator Alert (Ver 30.0) -->
+          <div id="leading-alert-panel" class="hidden p-1 rounded-xl transition-all duration-300">
+            <div class="bg-slate-900/80 backdrop-blur rounded-lg p-4">
+              <div class="flex items-start gap-4">
+                <div id="leading-alert-icon" class="p-2.5 rounded-lg flex-shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 id="leading-alert-title" class="font-display font-bold text-sm tracking-wide">--</h3>
+                  </div>
+                  <p id="leading-alert-desc" class="text-xs text-slate-400 mt-0.5 font-mono">--</p>
+                  <div id="leading-alert-indicators" class="mt-3 flex flex-wrap gap-1.5"></div>
+                </div>
+              </div>
+              <div id="leading-alert-action" class="mt-4 pt-3 border-t border-slate-700/50">
                 <p class="text-xs font-mono text-slate-300"></p>
               </div>
             </div>
@@ -1136,7 +1202,7 @@
 
 
       // 🚨 Risk Appetite Directive (Ver 27.4)
-      parseRiskAppetite(data.prompts);
+      parseMarketHealth(data.prompts);
 
       // 4. Sectors
       const sectors = data.sector_rotation || {};
@@ -1264,189 +1330,233 @@
     }
 
 
-    // 🚨 Risk Appetite Directive Parser (Ver 27.4)
-    function parseRiskAppetite(prompts) {
-      const alertDiv = document.getElementById('risk-appetite-alert');
-      if (!alertDiv || !prompts) return;
+    // 📊 Market Health Parser (Ver 30.0)
+    function parseMarketHealth(prompts) {
+      const healthPanel = document.getElementById('market-health-panel');
+      const alertPanel = document.getElementById('leading-alert-panel');
+      if (!healthPanel || !prompts) return;
       
-      // Parse from any prompt that has Risk Appetite section
       const promptText = prompts.long_p1 || prompts.pf || '';
       
-      // Extract Risk Appetite data (Ver 27.4 Option C: X/5 RISK OFF format)
-      const sentimentMatch = promptText.match(/Sentiment: (.+?) \((\d+)\/5 RISK OFF\)/);
-      if (!sentimentMatch) return;
-
-      const sentiment = sentimentMatch[1];
-      const riskOffFromPrompt = parseInt(sentimentMatch[2]);
+      // Parse Market Health Score from new format
+      // Format: **Score: 62/100** [MODERATE]
+      const scoreMatch = promptText.match(/\*\*Score: (\d+)\/100\*\*\s*\[([A-Z]+)\]/);
       
-      // Extract individual indicators
-      const indicators = {};
-      const indicatorRegex = /([🔴🟢]) (\w+): (RISK \w+)/g;
-      let match;
-      while ((match = indicatorRegex.exec(promptText)) !== null) {
-        indicators[match[2]] = match[3];
+      if (!scoreMatch) {
+        // Fallback: Try old format for backward compatibility
+        parseRiskAppetiteLegacy(prompts);
+        return;
       }
       
-      // Determine tier based on leading indicators
-      const smallCapOff = indicators['Small_Cap_Qual'] === 'RISK OFF';
-      const creditOff = indicators['Credit_Stress'] === 'RISK OFF';
-      const riskOffCount = Object.values(indicators).filter(v => v === 'RISK OFF').length;
+      const totalScore = parseInt(scoreMatch[1]);
+      const grade = scoreMatch[2];
       
-      let tier, tierColor, tierBg, tierBorder, tierIcon, tierTitle, tierDesc, tierAction;
+      // Parse component scores from table
+      // Format: | Trend (SPY) | 20/25 | Above SMA50/200 |
+      const trendMatch = promptText.match(/Trend.*?\|\s*(\d+)\/(\d+)/);
+      const breadthMatch = promptText.match(/Breadth.*?\|\s*(\d+)\/(\d+)/);
+      const volMatch = promptText.match(/Volatility.*?\|\s*(\d+)\/(\d+)/);
+      const leadingMatch = promptText.match(/Leading.*?\|\s*(\d+)\/(\d+)/);
       
-      // Tier 1: CRITICAL - Both leading indicators RISK OFF
-      if (smallCapOff && creditOff) {
-        tier = 'CRITICAL';
-        tierColor = 'text-red-400';
-        tierBg = 'from-red-500/30 to-transparent';
-        tierBorder = 'border-red-500/40';
-        tierIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-        tierTitle = 'RISK APPETITE: CRITICAL';
-        tierDesc = '⛔ Both leading indicators (Small_Cap + Credit_Stress) are RISK OFF';
-        tierAction = 'ALL new entry signals → PASS. Focus on capital preservation.';
-      }
-      // Tier 2: WARNING - One leading indicator RISK OFF + RISK OFF >= 4
-      else if ((smallCapOff || creditOff) && riskOffCount >= 4) {
-        tier = 'WARNING';
-        tierColor = 'text-amber-400';
-        tierBg = 'from-amber-500/30 to-transparent';
-        tierBorder = 'border-amber-500/40';
-        tierIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-        tierTitle = 'RISK APPETITE: WARNING';
-        const leadingOff = smallCapOff ? 'Small_Cap' : 'Credit_Stress';
-        tierDesc = `⚠️ Leading indicator ${leadingOff} is RISK OFF`;
-        tierAction = 'Only TIER 1 setups → PROCEED. Position size: HALF (50%).';
-      }
-      // Tier 3: CAUTION - RISK OFF >= 3
-      else if (riskOffCount >= 3) {
-        tier = 'CAUTION';
-        tierColor = 'text-yellow-400';
-        tierBg = 'from-yellow-500/20 to-transparent';
-        tierBorder = 'border-yellow-500/30';
-        tierIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-400"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-        tierTitle = 'RISK APPETITE: CAUTION';
-        tierDesc = `⚡ Defensive sentiment (${riskOffCount}/5 RISK OFF)`;
-        tierAction = 'Apply stricter quality filter. R:R minimum: 2.5:1.';
-      }
-      // Tier 4: Normal - RISK OFF <= 1 is AGGRESSIVE
-      else if (riskOffCount <= 1) {
-        tier = 'AGGRESSIVE';
-        tierColor = 'text-emerald-400';
-        tierBg = 'from-emerald-500/20 to-transparent';
-        tierBorder = 'border-emerald-500/30';
-        tierIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
-        tierTitle = 'RISK APPETITE: AGGRESSIVE';
-        tierDesc = `✅ Strong risk appetite (${riskOffCount}/5 RISK OFF)`;
-        tierAction = '';
-      }
-      else {
-        // RISK OFF = 2 → NORMAL
-        tier = 'NORMAL';
-        tierColor = 'text-slate-400';
-        tierBg = 'from-slate-500/10 to-transparent';
-        tierBorder = 'border-slate-500/20';
-        tierIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`;
-        tierTitle = 'RISK APPETITE: NORMAL';
-        tierDesc = `Standard risk environment (${riskOffCount}/5 RISK OFF)`;
-        tierAction = '';
-      }
+      const trend = trendMatch ? { score: parseInt(trendMatch[1]), max: parseInt(trendMatch[2]) } : { score: 0, max: 25 };
+      const breadth = breadthMatch ? { score: parseInt(breadthMatch[1]), max: parseInt(breadthMatch[2]) } : { score: 0, max: 30 };
+      const volatility = volMatch ? { score: parseInt(volMatch[1]), max: parseInt(volMatch[2]) } : { score: 0, max: 20 };
+      const leading = leadingMatch ? { score: parseInt(leadingMatch[1]), max: parseInt(leadingMatch[2]) } : { score: 0, max: 25 };
+      
+      // Parse action line
+      // Format: → **Action**: FULL (100%), ALL, R:R ≥ 3.0
+      const actionMatch = promptText.match(/→ \*\*Action\*\*: ([^,]+), ([^,]+), R:R ≥ ([\d.]+)/);
+      const position = actionMatch ? actionMatch[1] : '--';
+      const tierRestriction = actionMatch ? actionMatch[2] : '--';
+      const minRR = actionMatch ? actionMatch[3] : '--';
       
       // Update UI
-      alertDiv.classList.remove('hidden');
-      alertDiv.className = `p-1 rounded-xl bg-gradient-to-r ${tierBg} border ${tierBorder} transition-all duration-300`;
+      const gradeColors = {
+        'STRONG': { text: 'text-emerald-400', bg: 'from-emerald-500/20', border: 'border-emerald-500/30' },
+        'HEALTHY': { text: 'text-blue-400', bg: 'from-blue-500/20', border: 'border-blue-500/30' },
+        'MODERATE': { text: 'text-yellow-400', bg: 'from-yellow-500/20', border: 'border-yellow-500/30' },
+        'WEAK': { text: 'text-orange-400', bg: 'from-orange-500/20', border: 'border-orange-500/30' },
+        'CRITICAL': { text: 'text-red-400', bg: 'from-red-500/20', border: 'border-red-500/30' }
+      };
       
-      const iconEl = document.getElementById('risk-appetite-icon');
-      if (iconEl) {
-        iconEl.innerHTML = tierIcon;
-        iconEl.className = `p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/50 flex-shrink-0`;
+      const colors = gradeColors[grade] || gradeColors['MODERATE'];
+      
+      // Update panel styling
+      healthPanel.className = `p-1 rounded-xl transition-all duration-300 bg-gradient-to-r ${colors.bg} to-transparent border ${colors.border}`;
+      
+      // Score display
+      const scoreDisplay = document.getElementById('health-score-display');
+      if (scoreDisplay) {
+        scoreDisplay.textContent = totalScore;
+        scoreDisplay.className = `text-3xl font-mono font-bold ${colors.text}`;
       }
       
-      const titleEl = document.getElementById('risk-appetite-title');
-      if (titleEl) {
-        titleEl.textContent = tierTitle;
-        titleEl.className = `font-display font-bold text-sm tracking-wide ${tierColor}`;
+      const gradeText = document.getElementById('health-grade-text');
+      if (gradeText) {
+        gradeText.textContent = grade;
+        gradeText.className = `text-xs font-mono ${colors.text}`;
       }
       
-      const scoreEl = document.getElementById('risk-appetite-score');
+      // Component bars
+      updateHealthBar('trend', trend.score, trend.max);
+      updateHealthBar('breadth', breadth.score, breadth.max);
+      updateHealthBar('volatility', volatility.score, volatility.max);
+      updateHealthBar('leading', leading.score, leading.max);
+      
+      // Action summary
+      const posEl = document.getElementById('health-position');
+      if (posEl) posEl.textContent = position;
+      
+      const tierEl = document.getElementById('health-tier');
+      if (tierEl) tierEl.textContent = tierRestriction;
+      
+      const rrEl = document.getElementById('health-rr');
+      if (rrEl) rrEl.textContent = `R:R ≥ ${minRR}`;
+      
+      // Header badge
+      const headerScore = document.getElementById('market-health-score');
+      if (headerScore) {
+        headerScore.textContent = totalScore;
+        headerScore.className = `font-bold tracking-wide ${colors.text}`;
+      }
+      
+      const headerGrade = document.getElementById('market-health-grade');
+      if (headerGrade) {
+        headerGrade.textContent = grade;
+        headerGrade.className = `text-[10px] font-mono px-1.5 py-0.5 rounded border ${colors.border} ${colors.text}`;
+      }
+      
+      // Parse and display leading alert if present
+      parseLeadingAlert(promptText);
+    }
+    
+    function updateHealthBar(name, score, max) {
+      const bar = document.getElementById(`bar-${name}`);
+      const scoreEl = document.getElementById(`score-${name}`);
+      
+      if (bar) {
+        const pct = max > 0 ? (score / max) * 100 : 0;
+        setTimeout(() => { bar.style.width = `${pct}%`; }, 100);
+      }
       if (scoreEl) {
-        scoreEl.textContent = `${riskOffCount}/5 OFF`;
-        scoreEl.className = `text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 border border-slate-700 ${tierColor}`;
+        scoreEl.textContent = `${score}/${max}`;
       }
+    }
+    
+    function parseLeadingAlert(promptText) {
+      const alertPanel = document.getElementById('leading-alert-panel');
+      if (!alertPanel) return;
       
-      const descEl = document.getElementById('risk-appetite-desc');
-      if (descEl) descEl.textContent = tierDesc;
+      // Check for alert markers
+      const criticalMatch = promptText.match(/LEADING INDICATOR ALERT - CRITICAL/);
+      const warningMatch = promptText.match(/LEADING INDICATOR ALERT - WARNING/);
+      const cautionMatch = promptText.match(/LEADING INDICATOR ALERT - CAUTION/);
       
-      // Show indicators
-      const indicatorsEl = document.getElementById('risk-appetite-indicators');
-      if (indicatorsEl) {
-        indicatorsEl.innerHTML = Object.entries(indicators).map(([name, status]) => {
-          const isOn = status === 'RISK ON';
-          const shortName = name.replace('_Qual', '').replace('_', ' ');
-          const bgClass = isOn ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-400' : 'bg-red-900/30 border-red-700/50 text-red-400';
-          const icon = isOn ? '🟢' : '🔴';
-          return `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded border ${bgClass}">${icon} ${shortName}</span>`;
-        }).join('');
-      }
-      
-      // Show action if exists
-      const actionEl = document.getElementById('risk-appetite-action');
-      if (actionEl && tierAction) {
-        actionEl.classList.remove('hidden');
-        actionEl.querySelector('p').textContent = `→ ${tierAction}`;
-        actionEl.querySelector('p').className = `text-xs font-mono ${tierColor}`;
-      } else if (actionEl) {
-        actionEl.classList.add('hidden');
-      }
-      
-      // Update header Risk Appetite badge
-      const headerRisk = document.getElementById('risk-appetite-header');
-      const headerIcon = document.getElementById('risk-appetite-header-icon');
-      const headerScore = document.getElementById('risk-appetite-header-score');
-      
-      if (headerRisk) {
-        headerRisk.classList.remove('hidden');
+      if (!criticalMatch && !warningMatch && !cautionMatch) {
+        alertPanel.classList.add('hidden');
         
-        // Set colors and icon based on tier
-        if (tier === 'CRITICAL') {
-          headerRisk.className = 'flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border bg-red-950/80 border-red-500/50 animate-pulse';
-          if (headerIcon) headerIcon.textContent = '🚨';
-          if (headerScore) {
-            headerScore.textContent = `${riskOffCount}/5`;
-            headerScore.className = 'font-bold text-red-400';
-          }
-        } else if (tier === 'WARNING') {
-          headerRisk.className = 'flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border bg-amber-950/80 border-amber-500/50';
-          if (headerIcon) headerIcon.textContent = '⚠️';
-          if (headerScore) {
-            headerScore.textContent = `${riskOffCount}/5`;
-            headerScore.className = 'font-bold text-amber-400';
-          }
-        } else if (tier === 'CAUTION') {
-          headerRisk.className = 'flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border bg-yellow-950/80 border-yellow-500/50';
-          if (headerIcon) headerIcon.textContent = '⚡';
-          if (headerScore) {
-            headerScore.textContent = `${riskOffCount}/5`;
-            headerScore.className = 'font-bold text-yellow-400';
-          }
-        } else if (tier === 'AGGRESSIVE') {
-          headerRisk.className = 'flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border bg-emerald-950/80 border-emerald-500/50';
-          if (headerIcon) headerIcon.textContent = '🟢';
-          if (headerScore) {
-            headerScore.textContent = `${riskOffCount}/5`;
-            headerScore.className = 'font-bold text-emerald-400';
-          }
-        } else {
-          // NORMAL - show the badge
-          headerRisk.className = 'flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border bg-slate-900/80 border-slate-700/50';
-          if (headerIcon) headerIcon.textContent = '✅';
-          if (headerScore) {
-            headerScore.textContent = `${riskOffCount}/5`;
-            headerScore.className = 'font-bold text-slate-400';
-          }
+        // Hide header alert too
+        const headerAlert = document.getElementById('leading-alert-header');
+        if (headerAlert) headerAlert.classList.add('hidden');
+        return;
+      }
+      
+      alertPanel.classList.remove('hidden');
+      
+      let level, color, bg, border, icon, title, desc, action;
+      
+      if (criticalMatch) {
+        level = 'CRITICAL';
+        color = 'text-red-400';
+        bg = 'from-red-500/30';
+        border = 'border-red-500/40';
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        title = '🚨 LEADING INDICATOR ALERT - CRITICAL';
+        desc = 'Both Small_Cap and Credit_Stress are RISK OFF';
+        action = 'ALL new signals → PASS. Capital preservation mode.';
+      } else if (warningMatch) {
+        level = 'WARNING';
+        color = 'text-amber-400';
+        bg = 'from-amber-500/30';
+        border = 'border-amber-500/40';
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+        title = '⚠️ LEADING INDICATOR ALERT - WARNING';
+        desc = 'Leading indicator is RISK OFF';
+        action = 'TIER1 only. Position size: 50%.';
+      } else {
+        level = 'CAUTION';
+        color = 'text-yellow-400';
+        bg = 'from-yellow-500/20';
+        border = 'border-yellow-500/30';
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-400"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        title = '⚡ LEADING INDICATOR ALERT - CAUTION';
+        desc = '3+ indicators RISK OFF';
+        action = 'Stricter filter. R:R minimum 2.5:1.';
+      }
+      
+      // Update alert panel
+      alertPanel.className = `p-1 rounded-xl bg-gradient-to-r ${bg} to-transparent border ${border} transition-all duration-300`;
+      
+      const iconEl = document.getElementById('leading-alert-icon');
+      if (iconEl) {
+        iconEl.innerHTML = icon;
+        iconEl.className = 'p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/50 flex-shrink-0';
+      }
+      
+      const titleEl = document.getElementById('leading-alert-title');
+      if (titleEl) {
+        titleEl.textContent = title;
+        titleEl.className = `font-display font-bold text-sm tracking-wide ${color}`;
+      }
+      
+      const descEl = document.getElementById('leading-alert-desc');
+      if (descEl) descEl.textContent = desc;
+      
+      const actionEl = document.getElementById('leading-alert-action');
+      if (actionEl) {
+        const actionP = actionEl.querySelector('p');
+        if (actionP) {
+          actionP.textContent = `→ ${action}`;
+          actionP.className = `text-xs font-mono ${color}`;
+        }
+      }
+      
+      // Update header alert
+      const headerAlert = document.getElementById('leading-alert-header');
+      const headerIcon = document.getElementById('leading-alert-header-icon');
+      const headerText = document.getElementById('leading-alert-header-text');
+      
+      if (headerAlert) {
+        headerAlert.classList.remove('hidden');
+        headerAlert.className = `flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border ${border} bg-slate-900/80`;
+        
+        if (level === 'CRITICAL') {
+          headerAlert.classList.add('animate-pulse');
+        }
+        
+        if (headerIcon) headerIcon.textContent = level === 'CRITICAL' ? '🚨' : (level === 'WARNING' ? '⚠️' : '⚡');
+        if (headerText) {
+          headerText.textContent = level;
+          headerText.className = `font-bold text-[10px] ${color}`;
         }
       }
     }
+    
+    // Legacy support for old format
+    function parseRiskAppetiteLegacy(prompts) {
+      const promptText = prompts.long_p1 || prompts.pf || '';
+      const sentimentMatch = promptText.match(/Sentiment: (.+?) \((\d+)\/5 RISK OFF\)/);
+      if (!sentimentMatch) return;
+      
+      // Simple display for legacy
+      const healthPanel = document.getElementById('market-health-panel');
+      if (healthPanel) {
+        const gradeText = document.getElementById('health-grade-text');
+        if (gradeText) gradeText.textContent = 'Legacy Mode';
+      }
+    }
 
+    
 
     function getRegimeColor(regime) {
       if (regime.includes('STRONG_BULL')) return 'text-purple-400 text-glow-purple';
