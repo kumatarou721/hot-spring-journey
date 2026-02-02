@@ -1280,9 +1280,9 @@
         if (dtSec) dtSec.classList.remove('hidden');
 
         // Ver 30.6: Updated regex patterns to match actual prompt format
-        // Format: "SPY Regime: RISK-ON (VWAP: ABOVE)"
-        const spyVwapMatch = dayPrompt.match(/SPY Regime:.*?\(VWAP:\s*([A-Z_]+)\)/);
-        const qqqVwapMatch = dayPrompt.match(/QQQ Regime:.*?\(VWAP:\s*([A-Z_]+)\)/);
+        // Format: "SPY Regime: RISK-ON (VWAP: Above)" - case insensitive
+        const spyVwapMatch = dayPrompt.match(/SPY Regime:.*?\(VWAP:\s*([A-Za-z]+)\)/i);
+        const qqqVwapMatch = dayPrompt.match(/QQQ Regime:.*?\(VWAP:\s*([A-Za-z]+)\)/i);
         const gapMatch = dayPrompt.match(/Pre-Market Gaps\*\*:\s*SPY\s*([+-]?[\d.]+%?)/);
         const biasMatch = dayPrompt.match(/Market Bias\*\*:\s*([A-Z]+)/);
 
