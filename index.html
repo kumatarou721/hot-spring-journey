@@ -651,15 +651,15 @@
 
           <div class="grid grid-cols-3 gap-2 mb-4">
             <div class="bg-slate-900/80 rounded border border-slate-700/50 p-2 text-center">
-              <div class="text-[9px] text-slate-500 font-bold">VWAP</div>
+              <div class="text-[9px] text-slate-500 font-bold">SPY VWAP</div>
               <div id="vwap-status" class="text-xs font-mono font-bold mt-1 text-slate-200">--</div>
             </div>
             <div class="bg-slate-900/80 rounded border border-slate-700/50 p-2 text-center">
-              <div class="text-[9px] text-slate-500 font-bold">ORB</div>
+              <div class="text-[9px] text-slate-500 font-bold">QQQ VWAP</div>
               <div id="orb-status" class="text-xs font-mono font-bold mt-1 text-slate-200">--</div>
             </div>
             <div class="bg-slate-900/80 rounded border border-slate-700/50 p-2 text-center">
-              <div class="text-[9px] text-slate-500 font-bold">GAP</div>
+              <div class="text-[9px] text-slate-500 font-bold">SPY GAP</div>
               <div id="gap-status" class="text-xs font-mono font-bold mt-1 text-slate-200">--</div>
             </div>
           </div>
@@ -1278,34 +1278,52 @@
       if (dayPrompt.length > 50) {
         const dtSec = document.getElementById('daytrade-section');
         if (dtSec) dtSec.classList.remove('hidden');
-        
-        const vwapMatch = dayPrompt.match(/VWAP\*\*: ([A-Z]+)/);
-        const orbMatch = dayPrompt.match(/ORB\*\*: ([A-Z_]+)/);
-        const mktMatch = dayPrompt.match(/Market Status\*\*: (.*)/);
-        
+
+        // Ver 30.6: Updated regex patterns to match actual prompt format
+        // Format: "SPY Regime: RISK-ON (VWAP: ABOVE)"
+        const spyVwapMatch = dayPrompt.match(/SPY Regime:.*?\(VWAP:\s*([A-Z_]+)\)/);
+        const qqqVwapMatch = dayPrompt.match(/QQQ Regime:.*?\(VWAP:\s*([A-Z_]+)\)/);
+        const gapMatch = dayPrompt.match(/Pre-Market Gaps\*\*:\s*SPY\s*([+-]?[\d.]+%?)/);
+        const biasMatch = dayPrompt.match(/Market Bias\*\*:\s*([A-Z]+)/);
+
         const mh = document.getElementById('market-hours');
-        if (mh && mktMatch) mh.textContent = mktMatch[1].replace(/[🟢🔴]/g, '').trim();
-        
+        if (mh && biasMatch) mh.textContent = biasMatch[1];
+
         const vwap = document.getElementById('vwap-status');
-        if (vwap && vwapMatch) vwap.textContent = vwapMatch[1];
-        
+        if (vwap) vwap.textContent = spyVwapMatch ? spyVwapMatch[1] : '--';
+
         const orb = document.getElementById('orb-status');
-        if (orb && orbMatch) orb.textContent = orbMatch[1];
-        
+        if (orb) orb.textContent = qqqVwapMatch ? qqqVwapMatch[1] : '--';
+
+        const gap = document.getElementById('gap-status');
+        if (gap) gap.textContent = gapMatch ? gapMatch[1] : '--';
+
+        // Ver 30.6: Parse ETF table (skip Market Health table)
+        // ETF table format: | ETF | Type | Price | Change | Parent | Parent Chg |
         const lines = dayPrompt.split('\n');
-        const picks = lines.filter(l => l.includes('|')).slice(4, 8); 
-        if (picks.length > 0) {
+        const etfLines = lines.filter(l => {
+          if (!l.includes('|')) return false;
+          // Skip header rows and Market Health table rows
+          if (l.includes('Component') || l.includes('Trend') || l.includes('Breadth') ||
+              l.includes('Volatility') || l.includes('Leading') || l.includes('Score') ||
+              l.includes('---') || l.includes('ETF') && l.includes('Type') && l.includes('Price')) return false;
+          // Match ETF rows: starts with | and has Bull or Bear type
+          return l.match(/\|\s*[A-Z]{2,5}\s*\|\s*(Bull|Bear)\s*\|/);
+        }).slice(0, 4);
+
+        if (etfLines.length > 0) {
           const dtCand = document.getElementById('daytrade-candidates');
           if (dtCand) dtCand.classList.remove('hidden');
-          
+
           const dtList = document.getElementById('daytrade-list');
           if (dtList) {
-            dtList.innerHTML = picks.map(p => {
+            dtList.innerHTML = etfLines.map(p => {
               const cols = p.split('|').map(c => c.trim()).filter(c => c);
-              if (cols.length < 2) return '';
+              if (cols.length < 4) return '';
+              // cols[0]=ETF, cols[1]=Type, cols[2]=Price, cols[3]=Change
               return `<div class="flex justify-between text-xs border-b border-slate-800 pb-2 last:border-0">
-                <span class="font-bold text-slate-300 font-mono">${cols[1]}</span>
-                <span class="text-slate-500 font-mono">${cols[2]}</span>
+                <span class="font-bold text-slate-300 font-mono">${cols[0]} (${cols[1]})</span>
+                <span class="text-slate-500 font-mono">${cols[3]}</span>
               </div>`;
             }).join('');
           }
