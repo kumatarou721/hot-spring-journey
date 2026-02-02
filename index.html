@@ -1625,64 +1625,12 @@
     async function copyPrompt(key) {
       let text = "";
 
-      // Handle Summary prompts
-      if (key === 'lt_summary') {
-        text = `# 📝 Long-Term Analysis Summary Request
-
-Now, please create a comprehensive summary of your Phase 1 and Phase 2 analysis above.
-
-## Output Format:
-For each ticker analyzed, provide:
-
-| Ticker | Decision | Priority | Key Reasons | Warnings | Entry | Stop | Target | R:R |
-|--------|----------|----------|-------------|----------|-------|------|--------|-----|
-
-## Decision Criteria:
-- **PROCEED**: All mandatory pass conditions cleared + 3+ bonus conditions
-- **WATCH**: Minor concerns but worth monitoring
-- **PASS**: Any mandatory pass triggered OR insufficient setup quality
-
-## Summary Requirements:
-1. List ALL tickers from the analysis
-2. Include confidence score (0-100) for each
-3. Highlight any A/D Days concerns (D-Days ≥ 4 = automatic PASS)
-4. Note Climax Run status for each ticker
-5. Final recommendation with brief reasoning
-
-Please generate the summary now based on your previous analysis.`;
-      } else if (key === 'swing_summary') {
-        text = `# 📝 Swing Analysis Summary Request
-
-Now, please create a comprehensive summary of your Phase 1 and Phase 2 analysis above.
-
-## Output Format:
-For each ticker analyzed, provide:
-
-| Ticker | Decision | Priority | Pullback Grade | Key Reasons | Warnings | Entry | Stop | Target | R:R |
-|--------|----------|----------|----------------|-------------|----------|-------|------|--------|-----|
-
-## Decision Criteria:
-- **PROCEED**: R:R ≥ 2.0 + Pullback Grade A/B + Weekly trend aligned
-- **WATCH**: Decent setup but timing not ideal
-- **PASS**: R:R < 2.0 OR Pullback Grade D OR structure broken
-
-## Summary Requirements:
-1. List ALL tickers from the analysis
-2. Include Pullback Quality Tier (A/B/C/D) for each
-3. Verify R:R ratio meets ≥ 2.0 requirement
-4. Note any Hidden Divergence signals detected
-5. Check Weekly Trend alignment status
-6. Final recommendation with brief reasoning
-
-Please generate the summary now based on your previous analysis.`;
-      } else {
-        // Regular prompt copy from JSON
-        if (!appData || !appData.prompts || !appData.prompts[key]) {
-          showToast("NO DATA DETECTED");
-          return;
-        }
-        text = appData.prompts[key];
+      // All prompts from JSON (Ver 30.2.9: Removed hardcoded lt_summary/swing_summary)
+      if (!appData || !appData.prompts || !appData.prompts[key]) {
+        showToast("NO DATA DETECTED");
+        return;
       }
+      text = appData.prompts[key];
 
       try {
         await navigator.clipboard.writeText(text);
