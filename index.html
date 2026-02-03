@@ -263,6 +263,12 @@
               <span id="lt-ready" class="text-white font-bold">--</span>
             </div>
           </div>
+          <div class="mt-2 flex gap-2 text-xs font-mono">
+            <div class="bg-purple-900/20 px-2 py-1 rounded border border-purple-500/30 flex-1 text-center">
+              <span class="text-purple-400 block text-[9px]">🔄 ROTATION</span>
+              <span id="lt-rotation" class="text-purple-300 font-bold">--</span>
+            </div>
+          </div>
         </div>
 
         <div class="glass-hud rounded-xl p-5 hud-corner hover:-translate-y-1 transition-transform duration-300" style="--accent-color: #f59e0b">
@@ -282,6 +288,12 @@
             <div class="bg-amber-900/20 px-2 py-1 rounded border border-amber-500/20 flex-1 text-center">
               <span class="text-amber-400 block text-[9px]">READY</span>
               <span id="swing-ready" class="text-white font-bold">--</span>
+            </div>
+          </div>
+          <div class="mt-2 flex gap-2 text-xs font-mono">
+            <div class="bg-purple-900/20 px-2 py-1 rounded border border-purple-500/30 flex-1 text-center">
+              <span class="text-purple-400 block text-[9px]">🔄 ROTATION</span>
+              <span id="swing-rotation" class="text-purple-300 font-bold">--</span>
             </div>
           </div>
         </div>
@@ -1150,7 +1162,15 @@
       
       const statWatch = document.getElementById('stat-watch');
       if (statWatch) statWatch.textContent = (watchlists.long_term?.watching||0) + (watchlists.swing?.watching||0);
-      
+
+      // Rotation Watch Stats (Ver 31.0)
+      const rotationWatch = data.rotation_watch || {};
+      const ltRotation = document.getElementById('lt-rotation');
+      if (ltRotation) ltRotation.textContent = rotationWatch.long_term?.count || 0;
+
+      const swRotation = document.getElementById('swing-rotation');
+      if (swRotation) swRotation.textContent = rotationWatch.swing?.count || 0;
+
       const chartCount = Object.values(data.charts || {}).flat().length;
       const statCharts = document.getElementById('stat-charts');
       if (statCharts) statCharts.textContent = chartCount;
