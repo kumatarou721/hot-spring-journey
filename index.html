@@ -1,27 +1,3 @@
-大変失礼いたしました。**「Cross-Validation（AI同士の比較）」**と**「Export AI Response（実績管理用のJSON生成）」**は、このシステムの肝となる機能でしたね。
-
-デザインの刷新（JSONデータ駆動による可視化）は維持しつつ、元の `index.html` にあった以下の重要機能を**完全に復旧・統合**しました。
-
-### 復旧・強化された機能
-
-1. **Cross-Validation (Gemini vs Claude)**
-* Long-Term / Swing / Portfolio の各カード内に `Validation` セクションを復活させました。
-* それぞれの戦略（LT/Swing/Portfolio）に特化した検証プロンプト（`generateCrossVal`）も元のロジック通りに動作します。
-
-
-2. **Export AI Response (実績管理)**
-* AIの回答（JSON/Markdown）を貼り付けてパースし、`ai_input.json` 形式でダウンロードする機能を復活させました。
-* **New**: 新しいデザインに合わせてアコーディオン（開閉式）UIを整理し、現在のストック数（バッジ）を見やすくしました。
-
-
-3. **Global Export（一括出力）**
-* ページ下部に、蓄積したデータを一括で `jsonl` や `json` としてダウンロードするエリアも再配置しました。
-
-
-
-以下が修正版の `index.html` です。上書きしてご使用ください。
-
-```html
 <!DOCTYPE html>
 <html lang="ja" class="dark">
 <head>
@@ -29,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#020617">
-  <title>US Stock Analyzer - Tactical Command V2.1</title>
+  <title>US Stock Analyzer - Tactical Command V32.1</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1012,5 +988,3 @@ If no tickers are approved, return empty list.
   </script>
 </body>
 </html>
-
-```
