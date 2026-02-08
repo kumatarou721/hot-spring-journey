@@ -1,3 +1,27 @@
+大変失礼いたしました。**「Cross-Validation（AI同士の比較）」**と**「Export AI Response（実績管理用のJSON生成）」**は、このシステムの肝となる機能でしたね。
+
+デザインの刷新（JSONデータ駆動による可視化）は維持しつつ、元の `index.html` にあった以下の重要機能を**完全に復旧・統合**しました。
+
+### 復旧・強化された機能
+
+1. **Cross-Validation (Gemini vs Claude)**
+* Long-Term / Swing / Portfolio の各カード内に `Validation` セクションを復活させました。
+* それぞれの戦略（LT/Swing/Portfolio）に特化した検証プロンプト（`generateCrossVal`）も元のロジック通りに動作します。
+
+
+2. **Export AI Response (実績管理)**
+* AIの回答（JSON/Markdown）を貼り付けてパースし、`ai_input.json` 形式でダウンロードする機能を復活させました。
+* **New**: 新しいデザインに合わせてアコーディオン（開閉式）UIを整理し、現在のストック数（バッジ）を見やすくしました。
+
+
+3. **Global Export（一括出力）**
+* ページ下部に、蓄積したデータを一括で `jsonl` や `json` としてダウンロードするエリアも再配置しました。
+
+
+
+以下が修正版の `index.html` です。上書きしてご使用ください。
+
+```html
 <!DOCTYPE html>
 <html lang="ja" class="dark">
 <head>
@@ -5,7 +29,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#020617">
-  <title>US Stock Analyzer - Tactical Command V2</title>
+  <title>US Stock Analyzer - Tactical Command V2.1</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,6 +102,12 @@
       background: rgba(2, 6, 23, 1);
       outline: none;
     }
+    
+    /* Accordion Details */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] summary ~ * { animation: slideDown 0.2s ease-out forwards; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Scanline */
     .scanline-overlay {
@@ -117,7 +147,10 @@
           <span class="text-slate-500">DATA:</span>
           <span id="meta-date" class="text-blue-400 font-bold">--</span>
         </div>
-        <div id="header-regime" class="hidden px-3 py-1 rounded border font-bold tracking-wide">--</div>
+        <button onclick="exportResponses('json')" class="flex items-center gap-2 px-3 py-1 rounded bg-slate-800 hover:bg-emerald-900/50 border border-slate-700 hover:border-emerald-500/50 transition-colors group">
+          <span class="text-[10px] text-emerald-400 font-bold">EXPORT ALL</span>
+          <span id="total-stored-badge" class="bg-emerald-500/20 text-emerald-300 px-1.5 rounded text-[9px]">0</span>
+        </button>
       </div>
 
       <button onclick="location.reload()" class="p-2 text-slate-400 hover:text-white transition-colors">
@@ -178,7 +211,8 @@
               <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="bar-vol" class="h-full bg-purple-500 transition-all w-0"></div></div>
             </div>
             <div class="space-y-1">
-              <div class="flex justify-between text-[10px] uppercase font-bold text-slate-500"><span>Sentiment</span><span id="score-lead">0/100</span></div> <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="bar-lead" class="h-full bg-amber-500 transition-all w-0"></div></div>
+              <div class="flex justify-between text-[10px] uppercase font-bold text-slate-500"><span>Sentiment</span><span id="score-lead">0/100</span></div>
+              <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="bar-lead" class="h-full bg-amber-500 transition-all w-0"></div></div>
             </div>
           </div>
 
@@ -265,6 +299,41 @@
               </button>
             </div>
             
+            <details class="bg-slate-900/30 rounded border border-white/5 group/acc">
+              <summary class="p-3 text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-white flex justify-between items-center">
+                <span>4. Cross-Validation (Gemini vs Claude)</span>
+                <span class="text-slate-600 group-open/acc:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="p-3 pt-0 space-y-2">
+                <textarea id="lt-gemini-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Gemini Summary..."></textarea>
+                <textarea id="lt-claude-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Claude Summary..."></textarea>
+                <button onclick="generateCrossVal('lt')" class="w-full bg-cyan-700/50 hover:bg-cyan-600 text-cyan-200 text-[10px] font-bold py-2 rounded border border-cyan-500/30">
+                  GENERATE VALIDATION PROMPT
+                </button>
+              </div>
+            </details>
+
+            <details class="bg-slate-900/30 rounded border border-white/5 group/acc">
+              <summary class="p-3 text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-emerald-300 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <span>5. Export AI Response</span>
+                  <span id="lt-stored-badge" class="bg-slate-700 text-white px-1.5 rounded text-[9px]">0</span>
+                </div>
+                <span class="text-slate-600 group-open/acc:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="p-3 pt-0 space-y-2">
+                <textarea id="lt-ai-response" rows="3" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Final JSON/Markdown..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="parseAndSaveResponse('lt')" class="flex-1 bg-emerald-700/50 hover:bg-emerald-600 text-emerald-200 text-[10px] font-bold py-2 rounded border border-emerald-500/30">
+                    PARSE & SAVE
+                  </button>
+                  <button onclick="clearStoredResponses('lt')" class="px-3 bg-red-900/30 hover:bg-red-800 text-red-300 rounded border border-red-500/30">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </details>
+
             <div class="border-t border-white/5 pt-3">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-[10px] font-bold text-purple-400 uppercase">Rotation Watch</span>
@@ -303,6 +372,41 @@
               </button>
             </div>
 
+            <details class="bg-slate-900/30 rounded border border-white/5 group/acc">
+              <summary class="p-3 text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-white flex justify-between items-center">
+                <span>4. Cross-Validation (Gemini vs Claude)</span>
+                <span class="text-slate-600 group-open/acc:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="p-3 pt-0 space-y-2">
+                <textarea id="swing-gemini-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Gemini Summary..."></textarea>
+                <textarea id="swing-claude-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Claude Summary..."></textarea>
+                <button onclick="generateCrossVal('swing')" class="w-full bg-cyan-700/50 hover:bg-cyan-600 text-cyan-200 text-[10px] font-bold py-2 rounded border border-cyan-500/30">
+                  GENERATE VALIDATION PROMPT
+                </button>
+              </div>
+            </details>
+
+            <details class="bg-slate-900/30 rounded border border-white/5 group/acc">
+              <summary class="p-3 text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-emerald-300 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <span>5. Export AI Response</span>
+                  <span id="swing-stored-badge" class="bg-slate-700 text-white px-1.5 rounded text-[9px]">0</span>
+                </div>
+                <span class="text-slate-600 group-open/acc:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="p-3 pt-0 space-y-2">
+                <textarea id="swing-ai-response" rows="3" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Final JSON/Markdown..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="parseAndSaveResponse('swing')" class="flex-1 bg-emerald-700/50 hover:bg-emerald-600 text-emerald-200 text-[10px] font-bold py-2 rounded border border-emerald-500/30">
+                    PARSE & SAVE
+                  </button>
+                  <button onclick="clearStoredResponses('swing')" class="px-3 bg-red-900/30 hover:bg-red-800 text-red-300 rounded border border-red-500/30">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </details>
+
             <div class="border-t border-white/5 pt-3">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-[10px] font-bold text-purple-400 uppercase">Rotation Watch</span>
@@ -322,9 +426,23 @@
             <h3 class="font-display font-bold text-sm text-purple-400">PORTFOLIO</h3>
             <div id="pf-badge" class="hidden text-[10px] bg-red-900/80 text-white px-2 py-0.5 rounded animate-pulse">ALERTS</div>
           </div>
-          <button onclick="copyPrompt('pf')" class="w-full bg-slate-800 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 text-purple-200 py-3 rounded text-xs font-bold transition-all">
-            COPY REVIEW PROMPT
+          <button onclick="copyPrompt('pf')" class="w-full bg-slate-800 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 text-purple-200 py-3 rounded text-xs font-bold transition-all mb-3">
+            1. COPY REVIEW PROMPT
           </button>
+          
+          <details class="bg-slate-900/30 rounded border border-white/5 group/acc">
+            <summary class="p-3 text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-white flex justify-between items-center">
+              <span>2. Sell/Hold Verification</span>
+              <span class="text-slate-600 group-open/acc:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="p-3 pt-0 space-y-2">
+              <textarea id="pf-gemini-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Gemini Summary..."></textarea>
+              <textarea id="pf-claude-summary" rows="2" class="w-full input-tech rounded p-2 text-[10px]" placeholder="Paste Claude Summary..."></textarea>
+              <button onclick="generateCrossVal('pf')" class="w-full bg-purple-900/50 hover:bg-purple-800 text-purple-200 text-[10px] font-bold py-2 rounded border border-purple-500/30">
+                GENERATE DECISION
+              </button>
+            </div>
+          </details>
         </div>
 
         <div class="glass-hud rounded-xl p-4 border-l-2 border-l-red-500">
@@ -370,8 +488,23 @@
          </div>
       </div>
       
+      <div class="glass-hud rounded-xl p-5 border border-emerald-500/20">
+        <h3 class="font-display font-bold text-xs text-emerald-400 uppercase tracking-widest mb-4 flex items-center justify-between">
+          <span>Global Data Export</span>
+          <span class="text-[9px] text-slate-500 font-mono">Archive for input/ai_responses</span>
+        </h3>
+        <div class="flex gap-4">
+          <button onclick="exportResponses('jsonl')" class="flex-1 bg-emerald-900/30 hover:bg-emerald-800 border border-emerald-500/30 text-emerald-200 py-2 rounded text-xs font-bold transition-all">
+            DOWNLOAD .JSONL
+          </button>
+          <button onclick="exportResponses('json')" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded text-xs font-bold transition-all">
+            DOWNLOAD .JSON
+          </button>
+        </div>
+      </div>
+
       <div class="text-center text-[10px] text-slate-600 font-mono pb-4">
-        US Stock Analyzer Command Center v32.0
+        US Stock Analyzer Command Center v32.1
       </div>
 
     </div>
@@ -384,6 +517,50 @@
 
   <script>
     let appData = null;
+    
+    // --- RESTORED: AI Response Storage ---
+    const STORAGE_KEY = 'us_stock_analyzer_ai_responses';
+    let storedResponses = { lt: [], swing: [] };
+
+    function loadStoredResponses() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          storedResponses = JSON.parse(stored);
+        }
+      } catch (e) {
+        storedResponses = { lt: [], swing: [] };
+      }
+      updateStoredBadges();
+    }
+
+    function saveStoredResponses() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(storedResponses));
+      updateStoredBadges();
+    }
+
+    function updateStoredBadges() {
+      const ltCount = storedResponses.lt.length;
+      const swCount = storedResponses.swing.length;
+      const total = ltCount + swCount;
+      
+      const ltBadge = document.getElementById('lt-stored-badge');
+      if (ltBadge) {
+        ltBadge.textContent = ltCount;
+        ltBadge.classList.toggle('bg-emerald-500/20', ltCount > 0);
+        ltBadge.classList.toggle('text-emerald-300', ltCount > 0);
+      }
+      
+      const swBadge = document.getElementById('swing-stored-badge');
+      if (swBadge) {
+        swBadge.textContent = swCount;
+        swBadge.classList.toggle('bg-emerald-500/20', swCount > 0);
+        swBadge.classList.toggle('text-emerald-300', swCount > 0);
+      }
+
+      const totalBadge = document.getElementById('total-stored-badge');
+      if (totalBadge) totalBadge.textContent = total;
+    }
 
     // --- Drag & Drop ---
     const dropZone = document.getElementById('drop-zone');
@@ -405,6 +582,9 @@
 
     dropZone.addEventListener('drop', handleDrop, false);
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files), false);
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadStoredResponses);
 
     function handleDrop(e) { handleFiles(e.dataTransfer.files); }
 
@@ -424,7 +604,6 @@
     // --- Core Logic ---
     function initDashboard(jsonStr) {
       try {
-        // Sanitize NaN/Infinity from Python JSON
         const sanitized = jsonStr.replace(/:\s*NaN/g, ': null').replace(/:\s*Infinity/g, ': null');
         appData = JSON.parse(sanitized);
         
@@ -452,7 +631,6 @@
       const mh = appData.market_health;
       if (!mh) return;
 
-      // Score & Grade
       document.getElementById('health-score').textContent = `${mh.total_score || 0}/100`;
       document.getElementById('health-grade').textContent = mh.grade || '--';
       
@@ -460,10 +638,7 @@
       const regime = mh.regime || 'NEUTRAL';
       regimeEl.textContent = regime;
       
-      // Styling based on Regime
       let colorClass = 'border-slate-700';
-      let textClass = 'text-white';
-      
       if (regime.includes('Goldilocks') || regime.includes('BULL')) {
         colorClass = 'border-l-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]';
         regimeEl.className += ' bg-emerald-900/50 text-emerald-400 border-emerald-500/50';
@@ -480,16 +655,12 @@
       
       document.getElementById('health-panel').className = `glass-hud rounded-xl p-5 lg:col-span-2 border-l-4 transition-all ${colorClass}`;
 
-      // Components Bars
       updateBar('trend', mh.components?.trend);
       updateBar('breadth', mh.components?.breadth);
       updateBar('vol', mh.components?.volatility);
-      
-      // Sentiment (Using Y-axis score if available)
-      const leadScore = mh.leading_alert ? 0 : (mh.y_score || 0); // Simplified logic
+      const leadScore = mh.leading_alert ? 0 : (mh.y_score || 0);
       updateBarSimple('lead', leadScore, 100);
 
-      // Action & Risk
       const dir = mh.unified_directive || {};
       document.getElementById('val-action').textContent = dir.action || '--';
       document.getElementById('val-size').textContent = (dir.position_pct || 0) + '%';
@@ -497,14 +668,12 @@
       const rs = mh.sector_risk_sentiment || {};
       document.getElementById('val-risk').textContent = rs.risk_sentiment || '--';
 
-      // Alert
       const alertBox = document.getElementById('leading-alert-box');
       if (mh.leading_alert || mh.kill_switch?.active) {
         alertBox.classList.remove('hidden');
         document.getElementById('alert-desc').textContent = mh.leading_alert || "Market Circuit Breaker Active";
       }
 
-      // Sector Flow
       const sec = appData.sector_rotation || {};
       renderTags('flow-in', (sec.top_sectors || []).map(s => s.sector), 'bg-emerald-900/30 text-emerald-400 border-emerald-800');
       renderTags('flow-out', (sec.bottom_sectors || []).map(s => s.sector), 'bg-red-900/30 text-red-400 border-red-800');
@@ -532,11 +701,9 @@
       document.getElementById('cnt-lt').textContent = lt.length;
       document.getElementById('cnt-swing').textContent = sw.length;
 
-      // Render Candidate Lists
       renderCandidateList('list-lt', lt, 'LT');
       renderCandidateList('list-swing', sw, 'SW');
 
-      // Rotation Watch
       const rot = appData.rotation_watch || {};
       renderRotationTags('rot-lt-list', rot.long_term?.tickers || [], 'cnt-rot-lt');
       renderRotationTags('rot-sw-list', rot.swing?.tickers || [], 'cnt-rot-sw');
@@ -589,18 +756,230 @@
 
     // --- 3. Portfolio & DayTrade ---
     function renderPortfolioDayTrade() {
-      // Portfolio Alert Badge
       const pfPrompt = appData.prompts?.pf || "";
       if (pfPrompt.includes("RED") || pfPrompt.includes("SELL") || pfPrompt.includes("TRIM")) {
         document.getElementById('pf-badge').classList.remove('hidden');
       }
 
-      // Day Trade Bias
       const dtPrompt = appData.prompts?.short || "";
       const biasMatch = dtPrompt.match(/Bias\*\*:\s*([A-Z\s-]+)/);
       if (biasMatch) {
         document.getElementById('dt-bias').textContent = `BIAS: ${biasMatch[1].trim()}`;
       }
+    }
+
+    // --- RESTORED: Cross-Validation Logic ---
+    function generateCrossVal(type) {
+      const gSummary = document.getElementById(`${type}-gemini-summary`).value;
+      const cSummary = document.getElementById(`${type}-claude-summary`).value;
+      
+      if (!gSummary || !cSummary) {
+        showToast("ERROR: INPUT MISSING");
+        return;
+      }
+
+      let prompt = "";
+      const date = appData.metadata?.date || new Date().toISOString().split('T')[0];
+
+      if (type === 'pf') {
+        prompt = `# 🛡️ Portfolio Decision Cross-Validation (Full Scan)
+Date: ${date}
+
+---
+## ⚠️ CRITICAL: Risk Management Priority
+**Objective:** Compare the two analyst reports below and extract ALL ACTIONABLE signals.
+**Rule:** If ANY analyst recommends "SELL" or "TRIM" for a specific ticker, **the final decision for that ticker must lean towards risk reduction.**
+
+---
+## 📊 Analyst A (Gemini) - Full Report
+${gSummary}
+
+---
+## 📊 Analyst B (Claude) - Full Report
+${cSummary}
+
+---
+## 🎯 Task: Final Verdict per Ticker
+The input contains analysis for multiple portfolio positions.
+For EACH ticker mentioned in the reports:
+1. Compare Analyst A and B's assessment.
+2. Determine if a SELL/TRIM signal is valid.
+3. Output format:
+   - **[TICKER]**: [ACTION (HOLD/TRIM/SELL/ADD)]
+     - *Reason*: (Brief reason focusing on downside risk)
+`;
+      } else {
+        prompt = `# 🔬 Cross-Validation: ${type === 'lt' ? 'Long-Term' : 'Swing'}
+Date: ${date}
+
+---
+## ⚠️ CRITICAL: Devil's Advocate Constraint
+**Objective:** Extract the final trade decision from the full reports below.
+**Rule:** If opinions diverge on a ticker, default to **PASS**. (False positives > False negatives)
+
+---
+## 📊 Analyst A (Gemini) - Full Report
+${gSummary}
+
+---
+## 📊 Analyst B (Claude) - Full Report
+${cSummary}
+
+---
+## 🎯 Task: Final Verdict
+Based on the full analysis above, return a JSON list of approved tickers.
+Format:
+{
+  "approved_tickers": [
+    { "ticker": "XYZ", "decision": "PROCEED", "reason": "Both analysts agree on..." }
+  ]
+}
+If no tickers are approved, return empty list.
+`;
+      }
+      
+      navigator.clipboard.writeText(prompt).then(() => {
+        showToast("VALIDATION PROMPT COPIED");
+      });
+    }
+
+    // --- RESTORED: Export/Parse Logic ---
+    function parseAIResponse(content) {
+      const results = [];
+      content = content.trim();
+
+      const codeBlockPattern = /```(?:json)?\s*([\s\S]*?)```/g;
+      let match;
+      while ((match = codeBlockPattern.exec(content)) !== null) {
+        try {
+          const parsed = JSON.parse(match[1].trim());
+          results.push(...extractRecommendations(parsed));
+        } catch (e) { /* continue */ }
+      }
+      if (results.length > 0) return deduplicateByTicker(results);
+
+      try {
+        const parsed = JSON.parse(content);
+        return deduplicateByTicker(extractRecommendations(parsed));
+      } catch (e) { /* continue */ }
+
+      return [];
+    }
+
+    function extractRecommendations(parsed) {
+      const results = [];
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (typeof item === 'object' && item.ticker) {
+            results.push(normalizeResponse(item));
+          }
+        }
+      } else if (typeof parsed === 'object') {
+        if (parsed.recommendations) {
+          for (const rec of parsed.recommendations) {
+            results.push(normalizeResponse(rec));
+          }
+        } else if (parsed.approved_tickers) {
+          for (const rec of parsed.approved_tickers) {
+            if (rec.decision && !rec.recommendation) rec.recommendation = rec.decision;
+            results.push(normalizeResponse(rec));
+          }
+        } else if (parsed.ticker) {
+          results.push(normalizeResponse(parsed));
+        }
+      }
+      return results;
+    }
+
+    function normalizeResponse(item) {
+      return {
+        ticker: (item.ticker || '').toUpperCase(),
+        recommendation: item.recommendation || item.decision || item.action || 'PROCEED',
+        entry_price: item.entry_price || item.entry || null,
+        stop_price: item.stop_price || item.stop || null,
+        target_price: item.target_price || item.target || null,
+        _imported_at: new Date().toISOString()
+      };
+    }
+
+    function deduplicateByTicker(items) {
+      const seen = {};
+      for (const item of items) {
+        if (item.ticker) seen[item.ticker] = item;
+      }
+      return Object.values(seen);
+    }
+
+    function parseAndSaveResponse(type) {
+      const textarea = document.getElementById(`${type}-ai-response`);
+      if (!textarea || !textarea.value.trim()) {
+        showToast("ERROR: NO INPUT");
+        return;
+      }
+
+      const parsed = parseAIResponse(textarea.value);
+      if (parsed.length === 0) {
+        showToast("ERROR: PARSE FAILED");
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      parsed.forEach(item => {
+        item.analysis_type = type.toUpperCase();
+        item.date = today;
+      });
+
+      // Append to storage
+      if (type === 'lt') storedResponses.lt.push(...parsed);
+      else if (type === 'swing') storedResponses.swing.push(...parsed);
+      
+      saveStoredResponses();
+      textarea.value = '';
+      showToast(`SAVED ${parsed.length} TICKERS`);
+    }
+
+    function clearStoredResponses(type) {
+      if (confirm(`Clear all stored ${type.toUpperCase()} responses?`)) {
+        storedResponses[type] = [];
+        saveStoredResponses();
+        showToast(`${type.toUpperCase()} CLEARED`);
+      }
+    }
+
+    function exportResponses(format) {
+      const allResponses = [...storedResponses.lt, ...storedResponses.swing];
+      if (allResponses.length === 0) {
+        showToast("NO DATA TO EXPORT");
+        return;
+      }
+
+      const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      let content, filename;
+
+      if (format === 'jsonl') {
+        content = allResponses.map(item => JSON.stringify(item)).join('\n');
+        filename = `ai_responses_${date}.jsonl`;
+      } else {
+        const output = {
+          date: date,
+          exported_at: new Date().toISOString(),
+          recommendations: allResponses
+        };
+        content = JSON.stringify(output, null, 2);
+        filename = `ai_responses_${date}.json`;
+      }
+
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`EXPORTED ${filename}`);
     }
 
     // --- Utilities ---
@@ -627,18 +1006,11 @@
     function calcRisk() {
       const cap = parseFloat(document.getElementById('rc-cap').value) || 0;
       const risk = parseFloat(document.getElementById('rc-risk').value) || 0;
-      const stop = parseFloat(document.getElementById('rc-stop').value) || 0;
-      
-      // Simple logic: Assuming entry is somewhat implied or user calculates size based on Stop $ vs Entry
-      // But standard calc is: RiskAmt = Cap * Risk%. Shares = RiskAmt / (Entry - Stop).
-      // Since we don't have Entry input in this compact UI, let's just show Max Risk Amount
-      
-      // Wait, let's make it Risk Amount display for now as "Shares" is tricky without Entry
       const riskAmt = Math.floor(cap * (risk / 100));
       document.getElementById('rc-shares').textContent = `$${riskAmt}`;
-      // Label update hack for clarity
-      document.getElementById('rc-shares').previousElementSibling?.remove(); 
     }
   </script>
 </body>
 </html>
+
+```
