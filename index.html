@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#020617">
-  <title>US Stock Analyzer - Tactical Command V32.3</title>
+  <title>US Stock Analyzer - Tactical Command V32.4</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -515,7 +515,7 @@
       </div>
 
       <div class="text-center text-[10px] text-slate-600 font-mono pb-4">
-        US Stock Analyzer Command Center V32.3
+        US Stock Analyzer Command Center V32.4
       </div>
 
     </div>
@@ -734,13 +734,19 @@
       container.innerHTML = items.map(item => {
         const score = type === 'LT' ? item.LT_Score_V2 : item.Swing_Score_V2;
         const tags = (item.Score_V2_Tags || []).slice(0, 2).map(t => t.replace('#', '')).join(', ');
-        const warning = (item.Score_V2_Warnings && item.Score_V2_Warnings.length > 0) ? '⚠️' : '';
+        
+        // 警告の処理（マウスホバーで理由表示）
+        const warnings = item.Score_V2_Warnings || [];
+        const hasWarning = warnings.length > 0;
+        const warningIcon = hasWarning 
+          ? `<span class="text-amber-400 cursor-help ml-1" title="${warnings.join(', ')}">⚠️</span>` 
+          : '';
         
         return `
           <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded border border-white/5 hover:bg-white/5 transition-colors group">
             <div class="flex items-center gap-2">
               <span class="font-bold text-white font-mono">${item.Ticker}</span>
-              ${warning}
+              ${warningIcon}
               <span class="text-[10px] text-slate-500 truncate max-w-[120px] group-hover:text-slate-300 transition-colors">${tags}</span>
             </div>
             <div class="flex items-center gap-2">
