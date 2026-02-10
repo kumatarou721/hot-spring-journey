@@ -807,9 +807,33 @@
 Date: ${date}
 
 ---
-## ⚠️ CRITICAL: Risk Management Priority
-**Objective:** Compare the two analyst reports below and extract ALL ACTIONABLE signals.
-**Rule:** If ANY analyst recommends "SELL" or "TRIM" for a specific ticker, **the final decision for that ticker must lean towards risk reduction.**
+## Step 1: Extract Holdings List
+Before evaluating, you MUST first extract ALL holdings (tickers) from BOTH reports below.
+List them explicitly:
+- From Analyst A (Gemini): [list tickers with their verdict]
+- From Analyst B (Claude): [list tickers with their verdict]
+- **Combined holdings list**: [union of both — should be identical for portfolio review]
+
+## Step 2: Determine Each Analyst's Verdict Per Ticker
+For EACH ticker in the combined list, map each analyst's recommendation to one of: **HOLD / REDUCE / TRIM / SELL / ADD**
+- If an analyst does not mention a ticker at all, treat as **HOLD** (no change recommended)
+
+## Step 3: Apply Portfolio Disagreement Resolution
+**Risk-Biased Resolution (per ticker):**
+| Analyst A | Analyst B | Final Decision | Rationale |
+|-----------|-----------|---------------|-----------|
+| SELL | Any | **SELL** | Any SELL signal = act on it |
+| Any | SELL | **SELL** | Any SELL signal = act on it |
+| TRIM/REDUCE | HOLD | **REDUCE** | Lean towards risk reduction |
+| HOLD | TRIM/REDUCE | **REDUCE** | Lean towards risk reduction |
+| TRIM/REDUCE | TRIM/REDUCE | **TRIM/REDUCE** | Both agree on reduction |
+| HOLD | HOLD | **HOLD** | Consensus to maintain |
+| ADD | ADD | **ADD** | Both see opportunity |
+| ADD | HOLD | **HOLD** | No consensus to add risk |
+| ADD | REDUCE | **HOLD** | Signals cancel out |
+
+> **Key Rule**: Any SELL signal from either analyst → SELL. Disagreement on direction → lean conservative.
+> **Re-Purchase Test**: If BOTH analysts give Re-Purchase confidence < 50%, recommend **SELL** regardless.
 
 ---
 ## 📊 Analyst A (Gemini) - Full Report
@@ -821,13 +845,20 @@ ${cSummary}
 
 ---
 ## 🎯 Task: Final Verdict per Ticker
-The input contains analysis for multiple portfolio positions.
-For EACH ticker mentioned in the reports:
-1. Compare Analyst A and B's assessment.
-2. Determine if a SELL/TRIM signal is valid.
-3. Output format:
-   - **[TICKER]**: [ACTION (HOLD/TRIM/SELL/ADD)]
-     - *Reason*: (Brief reason focusing on downside risk)
+Follow Steps 1-3 above. Show your work:
+1. List all holdings and each analyst's verdict
+2. Apply the resolution table
+3. Return the result as JSON:
+\`\`\`json
+{
+  "ticker_resolution": [
+    { "ticker": "XYZ", "analyst_a": "HOLD", "analyst_b": "REDUCE", "rule_applied": "HOLD vs REDUCE → REDUCE", "decision": "REDUCE", "reason": "..." }
+  ],
+  "actions": [
+    { "ticker": "XYZ", "action": "HOLD/REDUCE/TRIM/SELL/ADD", "re_purchase_confidence": "avg of both analysts", "reason": "..." }
+  ]
+}
+\`\`\`
 `;
       } else {
         prompt = `# 🔬 Cross-Validation: ${type === 'lt' ? 'Long-Term' : 'Swing'}
