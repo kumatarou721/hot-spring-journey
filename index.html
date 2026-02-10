@@ -845,9 +845,10 @@ List them explicitly:
 For EACH ticker in the combined list:
 - If an analyst has the ticker in their \`recommendations\` array → use their stated action (BUY/WAIT/PASS)
 - **⚠️ CRITICAL: If an analyst's \`recommendations\` array does NOT contain a ticker, or the array is empty, that analyst's verdict for that ticker = PASS**
-- Rotation Watch entries (in \`rotation_watch_summary\`) are NOT regular recommendations. They do NOT count as BUY.
+- Rotation Watch entries (in \`rotation_watch_summary\`) are NOT regular recommendations. They do NOT count as BUY in Step 3.
+- However, Rotation Watch READY candidates must be **preserved separately** in Step 4.
 
-## Step 3: Apply Graduated Disagreement Rule
+## Step 3: Apply Graduated Disagreement Rule (Regular Candidates ONLY)
 **Disagreement Resolution (per ticker):**
 | Analyst A | Analyst B | Final Decision | Position Size |
 |-----------|-----------|---------------|--------------|
@@ -861,6 +862,13 @@ For EACH ticker in the combined list:
 
 > **Key Rule**: BUY vs PASS = always PASS. An empty recommendations array = PASS for all tickers.
 
+## Step 4: Rotation Watch Passthrough
+Rotation Watch candidates (\`rotation_watch_summary.ready\`) are monitoring items, NOT trade signals.
+They bypass the disagreement table entirely. Instead:
+- Collect all READY candidates from either analyst's \`rotation_watch_summary\`
+- Include them as-is in \`rotation_watch\` output array (with position cap: 50% of normal)
+- These are informational — the user decides when entry conditions are met
+
 ---
 ## 📊 Analyst A (Gemini) - Full Report
 ${gSummary}
@@ -871,10 +879,11 @@ ${cSummary}
 
 ---
 ## 🎯 Task: Final Verdict
-Follow Steps 1-3 above. Show your work:
+Follow Steps 1-4 above. Show your work:
 1. List the extracted tickers and each analyst's verdict
-2. Apply the disagreement table
-3. Return the result as JSON:
+2. Apply the disagreement table for regular candidates
+3. Collect Rotation Watch READY candidates separately
+4. Return the result as JSON:
 \`\`\`json
 {
   "ticker_resolution": [
@@ -882,10 +891,13 @@ Follow Steps 1-3 above. Show your work:
   ],
   "approved_tickers": [
     { "ticker": "XYZ", "decision": "BUY", "position_size": "FULL/HALF", "reason": "..." }
+  ],
+  "rotation_watch": [
+    { "ticker": "XYZ", "industry": "...", "trigger": "...", "position_cap": "50%", "source": "Analyst A/B" }
   ]
 }
 \`\`\`
-If no tickers are approved, return \`"approved_tickers": []\`.
+If no tickers are approved, return \`"approved_tickers": []\`. Always include \`rotation_watch\` (may be empty \`[]\`).
 `;
       }
       
