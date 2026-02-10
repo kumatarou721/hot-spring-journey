@@ -834,9 +834,20 @@ For EACH ticker mentioned in the reports:
 Date: ${date}
 
 ---
-## ⚠️ CRITICAL: Graduated Disagreement Rule
-**Objective:** Compare two independent analyst reports and determine the final trade decision.
+## Step 1: Extract Ticker List
+Before evaluating, you MUST first extract ALL unique tickers from BOTH reports below.
+List them explicitly:
+- From Analyst A (Gemini) recommendations: [list tickers]
+- From Analyst B (Claude) recommendations: [list tickers]
+- **Combined evaluation list**: [union of both]
 
+## Step 2: Determine Each Analyst's Verdict Per Ticker
+For EACH ticker in the combined list:
+- If an analyst has the ticker in their \`recommendations\` array → use their stated action (BUY/WAIT/PASS)
+- **⚠️ CRITICAL: If an analyst's \`recommendations\` array does NOT contain a ticker, or the array is empty, that analyst's verdict for that ticker = PASS**
+- Rotation Watch entries (in \`rotation_watch_summary\`) are NOT regular recommendations. They do NOT count as BUY.
+
+## Step 3: Apply Graduated Disagreement Rule
 **Disagreement Resolution (per ticker):**
 | Analyst A | Analyst B | Final Decision | Position Size |
 |-----------|-----------|---------------|--------------|
@@ -846,9 +857,9 @@ Date: ${date}
 | BUY | PASS | **PASS** | — (fundamental disagreement) |
 | PASS | BUY | **PASS** | — (fundamental disagreement) |
 | WAIT | WAIT | **WAIT** | — |
-| Any | PASS/Any | **PASS** | — (when both lean negative) |
+| Any + PASS | Any | **PASS** | — (when either leans negative) |
 
-> **Key Change**: BUY vs WAIT is no longer an automatic PASS. Split opinions result in a half-sized position, reflecting partial conviction.
+> **Key Rule**: BUY vs PASS = always PASS. An empty recommendations array = PASS for all tickers.
 
 ---
 ## 📊 Analyst A (Gemini) - Full Report
@@ -860,13 +871,21 @@ ${cSummary}
 
 ---
 ## 🎯 Task: Final Verdict
-Based on the disagreement resolution table above, return a JSON list:
+Follow Steps 1-3 above. Show your work:
+1. List the extracted tickers and each analyst's verdict
+2. Apply the disagreement table
+3. Return the result as JSON:
+\`\`\`json
 {
+  "ticker_resolution": [
+    { "ticker": "XYZ", "analyst_a": "BUY", "analyst_b": "PASS", "rule_applied": "BUY vs PASS → PASS", "decision": "PASS", "position_size": "—", "reason": "..." }
+  ],
   "approved_tickers": [
-    { "ticker": "XYZ", "decision": "BUY/WAIT/PASS", "position_size": "FULL/HALF", "analyst_a": "BUY/WAIT/PASS", "analyst_b": "BUY/WAIT/PASS", "reason": "..." }
+    { "ticker": "XYZ", "decision": "BUY", "position_size": "FULL/HALF", "reason": "..." }
   ]
 }
-Include ALL tickers mentioned by either analyst. Do not omit any.
+\`\`\`
+If no tickers are approved, return \`"approved_tickers": []\`.
 `;
       }
       
