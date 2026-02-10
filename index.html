@@ -834,9 +834,21 @@ For EACH ticker mentioned in the reports:
 Date: ${date}
 
 ---
-## ⚠️ CRITICAL: Devil's Advocate Constraint
-**Objective:** Extract the final trade decision from the full reports below.
-**Rule:** If opinions diverge on a ticker, default to **PASS**. (False positives > False negatives)
+## ⚠️ CRITICAL: Graduated Disagreement Rule
+**Objective:** Compare two independent analyst reports and determine the final trade decision.
+
+**Disagreement Resolution (per ticker):**
+| Analyst A | Analyst B | Final Decision | Position Size |
+|-----------|-----------|---------------|--------------|
+| BUY | BUY | **BUY** | FULL |
+| BUY | WAIT | **BUY** | **HALF** (reduced due to split opinion) |
+| WAIT | BUY | **BUY** | **HALF** (reduced due to split opinion) |
+| BUY | PASS | **PASS** | — (fundamental disagreement) |
+| PASS | BUY | **PASS** | — (fundamental disagreement) |
+| WAIT | WAIT | **WAIT** | — |
+| Any | PASS/Any | **PASS** | — (when both lean negative) |
+
+> **Key Change**: BUY vs WAIT is no longer an automatic PASS. Split opinions result in a half-sized position, reflecting partial conviction.
 
 ---
 ## 📊 Analyst A (Gemini) - Full Report
@@ -848,14 +860,13 @@ ${cSummary}
 
 ---
 ## 🎯 Task: Final Verdict
-Based on the full analysis above, return a JSON list of approved tickers.
-Format:
+Based on the disagreement resolution table above, return a JSON list:
 {
   "approved_tickers": [
-    { "ticker": "XYZ", "decision": "PROCEED", "reason": "Both analysts agree on..." }
+    { "ticker": "XYZ", "decision": "BUY/WAIT/PASS", "position_size": "FULL/HALF", "analyst_a": "BUY/WAIT/PASS", "analyst_b": "BUY/WAIT/PASS", "reason": "..." }
   ]
 }
-If no tickers are approved, return empty list.
+Include ALL tickers mentioned by either analyst. Do not omit any.
 `;
       }
       
