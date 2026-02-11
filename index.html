@@ -868,21 +868,23 @@ Date: ${date}
 ## Step 1: Extract Ticker List
 Before evaluating, you MUST first extract ALL unique tickers from BOTH reports below.
 List them explicitly:
-- From Analyst A (Gemini) recommendations: [list tickers]
-- From Analyst B (Claude) recommendations: [list tickers]
+- From Analyst A (Gemini) recommendations: [list tickers with News Verdict color]
+- From Analyst B (Claude) recommendations: [list tickers with News Verdict color]
 - **Combined evaluation list**: [union of both]
 
 ## Step 2: Determine Each Analyst's Verdict Per Ticker
 For EACH ticker in the combined list:
 - If an analyst has the ticker in their \`recommendations\` array → use their stated action (BUY/WAIT/PASS)
 - **⚠️ CRITICAL: If an analyst's \`recommendations\` array does NOT contain a ticker, or the array is empty, that analyst's verdict for that ticker = PASS**
+- Also extract each analyst's **News Verdict color** (🔴 RED / 🟡 YELLOW / 🟢 GREEN) for use in Step 3.
 - Rotation Watch entries (in \`rotation_watch_summary\`) are NOT regular recommendations. They do NOT count as BUY in Step 3.
 - However, Rotation Watch READY candidates must be **preserved separately** in Step 4.
 
 ## Step 3: Apply Graduated Disagreement Rule (Regular Candidates ONLY)
-**Disagreement Resolution (per ticker):**
-| Analyst A | Analyst B | Final Decision | Position Size |
-|-----------|-----------|---------------|--------------|
+
+### 3a. Base Disagreement Resolution (per ticker):
+| Analyst A | Analyst B | Final Decision | Base Position Size |
+|-----------|-----------|---------------|-------------------|
 | BUY | BUY | **BUY** | FULL |
 | BUY | WAIT | **BUY** | **HALF** (reduced due to split opinion) |
 | WAIT | BUY | **BUY** | **HALF** (reduced due to split opinion) |
@@ -893,12 +895,34 @@ For EACH ticker in the combined list:
 
 > **Key Rule**: BUY vs PASS = always PASS. An empty recommendations array = PASS for all tickers.
 
+### 3b. 🟡 YELLOW News Override (applies AFTER 3a):
+If EITHER analyst flagged a ticker with 🟡 YELLOW News Verdict:
+| Analyst A News | Analyst B News | Position Adjustment |
+|---------------|---------------|-------------------|
+| 🟢 GREEN | 🟡 YELLOW | **Cap at HALF** (Yellow news requires caution) |
+| 🟡 YELLOW | 🟢 GREEN | **Cap at HALF** (Yellow news requires caution) |
+| 🟡 YELLOW | 🟡 YELLOW | **Cap at HALF** (Both flagged concern) |
+
+> Any YELLOW from either analyst → final position_size capped at HALF, regardless of Step 3a result.
+
+### 3c. ⚠️ CRITICAL POSITION SIZING RULE (Market Directive Cap):
+The final \`position_size\` **MUST NOT exceed** the Market Directive limit from the analyst reports.
+- Extract the **Unified Position Size** (e.g., "75%", "50%", "100%") from the Market Context section of either report.
+- Apply as an absolute ceiling:
+  - BUY + BUY (FULL) → capped at Market Directive (e.g., 75% if Three-Quarter)
+  - BUY + WAIT (HALF) → half of Market Directive (e.g., 37.5% if Three-Quarter)
+  - YELLOW override (HALF) → half of Market Directive
+- **Output the final position_size as a specific percentage**, not just "FULL/HALF".
+- Example: Market Directive = 75% → BUY+BUY = "75%", BUY+WAIT = "37.5%", YELLOW = "37.5%"
+
 ## Step 4: Rotation Watch Passthrough
 Rotation Watch candidates (\`rotation_watch_summary.ready\`) are monitoring items, NOT trade signals.
 They bypass the disagreement table entirely. Instead:
-- Collect all READY candidates from either analyst's \`rotation_watch_summary\`
-- Include them as-is in \`rotation_watch\` output array (with position cap: 50% of normal)
-- These are informational — the user decides when entry conditions are met
+- ⚠️ **FILTER STRICTLY**: Only include candidates explicitly marked as **"READY"** or **"IMMINENT"** by at least one analyst.
+- **Exclude "MONITOR" and "SKIP"** candidates to keep the actionable list clean.
+- If both analysts have the same ticker as READY, merge their trigger conditions.
+- Position cap: 50% of Market Directive (not 50% of FULL).
+- These are informational — the user decides when entry conditions are met.
 
 ---
 ## 📊 Analyst A (Gemini) - Full Report
@@ -911,20 +935,41 @@ ${cSummary}
 ---
 ## 🎯 Task: Final Verdict
 Follow Steps 1-4 above. Show your work:
-1. List the extracted tickers and each analyst's verdict
-2. Apply the disagreement table for regular candidates
-3. Collect Rotation Watch READY candidates separately
-4. Return the result as JSON:
+1. List the extracted tickers, each analyst's verdict, and News Verdict color
+2. Apply the disagreement table (3a), then YELLOW override (3b), then Market Directive cap (3c)
+3. Collect Rotation Watch **READY-only** candidates separately
+4. For each approved ticker, preserve the **best entry plan** from whichever analyst provided more precise levels
+5. Return the result as JSON:
 \`\`\`json
 {
+  "market_directive": {
+    "position_limit": "XX%",
+    "regime": "...",
+    "source": "extracted from reports"
+  },
   "ticker_resolution": [
-    { "ticker": "XYZ", "analyst_a": "BUY", "analyst_b": "PASS", "rule_applied": "BUY vs PASS → PASS", "decision": "PASS", "position_size": "—", "reason": "..." }
+    { "ticker": "XYZ", "analyst_a": "BUY", "analyst_b": "PASS", "news_a": "GREEN", "news_b": "GREEN", "rule_applied": "BUY vs PASS → PASS", "decision": "PASS", "position_size": "—", "reason": "..." }
   ],
   "approved_tickers": [
-    { "ticker": "XYZ", "decision": "BUY", "position_size": "FULL/HALF", "reason": "..." }
+    {
+      "ticker": "XYZ",
+      "decision": "BUY",
+      "position_size": "XX% (calculated: base × market_directive)",
+      "entry_plan": {
+        "entry": "$XXX.XX",
+        "stop": "$XXX.XX",
+        "target": "$XXX.XX"
+      },
+      "rationale": {
+        "catalyst": "from Phase 1 assessment",
+        "primary_risk": "from Phase 2 assessment"
+      },
+      "news_verdict": "GREEN/YELLOW",
+      "reason": "..."
+    }
   ],
   "rotation_watch": [
-    { "ticker": "XYZ", "industry": "...", "trigger": "...", "position_cap": "50%", "source": "Analyst A/B" }
+    { "ticker": "XYZ", "status": "READY", "industry": "...", "trigger": "...", "position_cap": "XX% (50% of market directive)", "source": "Analyst A/B/Both" }
   ]
 }
 \`\`\`
@@ -986,12 +1031,17 @@ If no tickers are approved, return \`"approved_tickers": []\`. Always include \`
     }
 
     function normalizeResponse(item) {
+      const ep = item.entry_plan || {};
       return {
         ticker: (item.ticker || '').toUpperCase(),
         recommendation: item.recommendation || item.decision || item.action || 'PROCEED',
-        entry_price: item.entry_price || item.entry || null,
-        stop_price: item.stop_price || item.stop || null,
-        target_price: item.target_price || item.target || null,
+        entry_price: item.entry_price || item.entry || ep.entry || null,
+        stop_price: item.stop_price || item.stop || ep.stop || null,
+        target_price: item.target_price || item.target || ep.target || null,
+        position_size: item.position_size || null,
+        catalyst: (item.rationale && item.rationale.catalyst) || item.catalyst || null,
+        primary_risk: (item.rationale && item.rationale.primary_risk) || item.primary_risk || null,
+        news_verdict: item.news_verdict || null,
         reason: item.reason || item.reasons || null,
         _imported_at: new Date().toISOString()
       };
