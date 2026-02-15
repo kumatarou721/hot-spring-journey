@@ -676,7 +676,13 @@
 
       // Y-Axis Details (Future Sentiment)
       if (mh.y_details) {
-        document.getElementById('y-score-total').textContent = `${mh.y_score}/100`;
+        const trw = mh.kill_switch?.tail_risk_warning;
+        if (trw?.active) {
+          document.getElementById('y-score-total').innerHTML =
+            `${mh.y_score}/100 <span class="text-[9px] text-amber-400 ml-1">⚠️ -${trw.penalty}pt</span>`;
+        } else {
+          document.getElementById('y-score-total').textContent = `${mh.y_score}/100`;
+        }
         updateBar('credit', { score: mh.y_details.credit, max: 50 });
         updateBar('macro', { score: mh.y_details.macro, max: 25 });
         updateBar('cycle', { score: mh.y_details.cycle, max: 25 });
@@ -693,6 +699,16 @@
       if (mh.leading_alert || mh.kill_switch?.active) {
         alertBox.classList.remove('hidden');
         document.getElementById('alert-desc').textContent = mh.leading_alert || "Market Circuit Breaker Active";
+      }
+
+      // Tail Risk Warning (SKEW) - amber warning, separate from Kill Switch
+      const trwAlert = mh.kill_switch?.tail_risk_warning;
+      if (trwAlert?.active && !mh.kill_switch?.active) {
+        alertBox.classList.remove('hidden', 'bg-red-900/20', 'border-red-500/30', 'text-red-300');
+        alertBox.classList.add('bg-amber-900/20', 'border-amber-500/30', 'text-amber-300');
+        document.getElementById('alert-title').textContent = 'TAIL RISK WARNING';
+        document.getElementById('alert-desc').textContent =
+          `SKEW ${trwAlert.skew_value} > 145 (VIX below SMA20) — Y-score -${trwAlert.penalty}pt applied`;
       }
 
       const sec = appData.sector_rotation || {};
