@@ -1189,7 +1189,7 @@ If no tickers are approved, return \`"approved_tickers": []\`. Always include \`
       t.classList.remove('translate-y-20', 'opacity-0');
       setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2000);
     }
-    
+
     // Risk Calc
     const rcIds = ['rc-cap', 'rc-risk', 'rc-stop'];
     rcIds.forEach(id => document.getElementById(id).addEventListener('input', calcRisk));
