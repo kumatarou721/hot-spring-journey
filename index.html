@@ -1030,16 +1030,35 @@ If no tickers are approved, return \`"approved_tickers": []\`. Always include \`
           }
         }
       } else if (typeof parsed === 'object') {
-        if (parsed.recommendations) {
+        // Check recommendations array
+        if (parsed.recommendations && parsed.recommendations.length > 0) {
           for (const rec of parsed.recommendations) {
             results.push(normalizeResponse(rec));
           }
-        } else if (parsed.approved_tickers) {
+        }
+        // Check approved_tickers array
+        if (parsed.approved_tickers && parsed.approved_tickers.length > 0) {
           for (const rec of parsed.approved_tickers) {
             if (rec.decision && !rec.recommendation) rec.recommendation = rec.decision;
             results.push(normalizeResponse(rec));
           }
-        } else if (parsed.ticker) {
+        }
+        // Check ticker_resolution array (Cross-Validation format)
+        if (parsed.ticker_resolution && parsed.ticker_resolution.length > 0) {
+          for (const rec of parsed.ticker_resolution) {
+            if (rec.decision && !rec.recommendation) rec.recommendation = rec.decision;
+            results.push(normalizeResponse(rec));
+          }
+        }
+        // Check rotation_watch array
+        if (parsed.rotation_watch && parsed.rotation_watch.length > 0) {
+          for (const rec of parsed.rotation_watch) {
+            if (rec.decision && !rec.recommendation) rec.recommendation = rec.decision;
+            results.push(normalizeResponse(rec));
+          }
+        }
+        // Fallback: single object with ticker
+        if (results.length === 0 && parsed.ticker) {
           results.push(normalizeResponse(parsed));
         }
       }
