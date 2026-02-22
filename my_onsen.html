@@ -92,6 +92,23 @@
         .achievement-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; transition: width 1s ease; }
 
         /* Controls */
+        .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+        .filter-toggle-btn {
+            display: none; padding: 10px 14px; border-radius: 50px; border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text-muted); cursor: pointer; font-size: 0.82rem;
+            white-space: nowrap; transition: all 0.2s; align-items: center; gap: 6px;
+        }
+        .filter-toggle-btn:hover { border-color: var(--primary); color: var(--text); }
+        .filter-toggle-btn.active { border-color: var(--primary); color: var(--primary); }
+        .filter-toggle-arrow { font-size: 0.7rem; transition: transform 0.3s; }
+        .filter-toggle-btn.active .filter-toggle-arrow { transform: rotate(180deg); }
+        .filter-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: var(--primary); color: #1a1a1a; font-size: 0.7rem; font-weight: bold;
+            width: 18px; height: 18px; border-radius: 50%; margin-left: 4px;
+        }
+        .filter-panel { margin-bottom: 8px; }
+        .filter-buttons-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
         .controls-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
         #searchInput {
             flex: 1; min-width: 250px; padding: 12px 20px; border-radius: 50px;
@@ -182,7 +199,19 @@
             .bar-label { width: 100px; }
             .tab-btn { font-size: 0.78rem; padding: 10px 4px; }
             .tab-btn i { display: none; }
-            .controls-bar { flex-direction: column; }
+            .filter-toggle-btn { display: flex; }
+            .filter-panel { display: none; overflow: hidden; }
+            .filter-panel.open { display: block; animation: slideDown 0.25s ease; }
+            @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+            .filter-buttons-row { flex-direction: column; gap: 8px; }
+            .filter-buttons-row .filter-btn,
+            .filter-buttons-row .sort-btn { width: 100%; text-align: center; justify-content: center; }
+            .search-row { margin-bottom: 8px; }
+            .list-header-fixed { padding-bottom: 8px; }
+            #tab-list { height: calc(100vh - 130px); }
+            .filter-toggle-label { display: none; }
+            header { padding: 30px 16px 20px; }
+            header h1 { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -244,13 +273,18 @@
     <!-- List Tab -->
     <div class="tab-content" id="tab-list">
         <div class="list-header-fixed">
-            <div class="controls-bar">
+            <div class="search-row">
                 <input type="text" id="searchInput" placeholder="施設名、都道府県、泉質、温泉地で検索...">
-                <button class="filter-btn" id="starFilter" onclick="toggleStarFilter()">★ リピートのみ</button>
-                <button class="filter-btn" id="kakeFilter" onclick="toggleKakeFilter()">♨ 掛け流しのみ</button>
-                <button class="sort-btn" id="sortBtn" onclick="toggleSort()"><i class="fas fa-sort"></i> <span id="sortLabel">件数順</span></button>
+                <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterPanel()"><i class="fas fa-sliders-h"></i> <span class="filter-toggle-label">絞り込み</span> <i class="fas fa-chevron-down filter-toggle-arrow"></i></button>
             </div>
-            <div class="filter-tags" id="typeFilters"></div>
+            <div class="filter-panel" id="filterPanel">
+                <div class="filter-buttons-row">
+                    <button class="filter-btn" id="starFilter" onclick="toggleStarFilter()">★ リピートのみ</button>
+                    <button class="filter-btn" id="kakeFilter" onclick="toggleKakeFilter()">♨ 掛け流しのみ</button>
+                    <button class="sort-btn" id="sortBtn" onclick="toggleSort()"><i class="fas fa-sort"></i> <span id="sortLabel">件数順</span></button>
+                </div>
+                <div class="filter-tags" id="typeFilters"></div>
+            </div>
             <div class="results-info" id="resultsInfo"></div>
         </div>
         <div class="list-scroll-area" id="accordionContainer"></div>
@@ -1042,6 +1076,31 @@ function toggleKakeFilter() {
     applyFilters();
 }
 
+function toggleFilterPanel() {
+    var panel = document.getElementById('filterPanel');
+    var btn = document.getElementById('filterToggleBtn');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+}
+
+function updateFilterBadge() {
+    var count = 0;
+    if (starFilterActive) count++;
+    if (kakeFilterActive) count++;
+    if (activeTypeFilter) count++;
+    var btn = document.getElementById('filterToggleBtn');
+    var badge = btn.querySelector('.filter-badge');
+    if (count > 0) {
+        if (!badge) { badge = document.createElement('span'); badge.className = 'filter-badge'; btn.appendChild(badge); }
+        badge.textContent = count;
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+    } else {
+        if (badge) badge.remove();
+        if (!btn.classList.contains('active')) { btn.style.borderColor = ''; btn.style.color = ''; }
+    }
+}
+
 function toggleStarFilter() {
     starFilterActive = !starFilterActive;
     document.getElementById('starFilter').classList.toggle('active', starFilterActive);
@@ -1071,6 +1130,7 @@ function applyFilters() {
     if (kakeFilterActive) filtered = filtered.filter(function(d) { return d.info && d.info.indexOf('掛け流し') >= 0; });
     if (activeTypeFilter) filtered = filtered.filter(function(d) { return d.type === activeTypeFilter; });
     document.getElementById('resultsInfo').innerText = filtered.length + ' 件' + (filtered.length < onsenData.length ? ' （絞り込み中）' : '');
+    updateFilterBadge();
     renderList(filtered);
     if (searchTerm || starFilterActive || activeTypeFilter) {
         document.querySelectorAll('.pref-section').forEach(function(s) { s.classList.add('active'); });
