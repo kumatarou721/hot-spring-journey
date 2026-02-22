@@ -120,7 +120,17 @@
         }
         .filter-tag:hover { border-color: var(--primary); color: var(--text); }
         .filter-tag.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
-        .results-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+        .results-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0; }
+
+        /* Fixed header + scrollable list */
+        #tab-list { display: none; flex-direction: column; height: calc(100vh - 160px); }
+        #tab-list.active { display: flex !important; }
+        .list-header-fixed { flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+        .list-scroll-area { flex: 1; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--primary) var(--card-bg); }
+        .list-scroll-area::-webkit-scrollbar { width: 8px; }
+        .list-scroll-area::-webkit-scrollbar-track { background: var(--card-bg); border-radius: 4px; }
+        .list-scroll-area::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        .list-scroll-area::-webkit-scrollbar-thumb:hover { background: #e9c46a; }
 
         /* Accordion */
         .pref-section { margin-bottom: 8px; border-radius: 10px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border); }
@@ -227,15 +237,17 @@
 
     <!-- List Tab -->
     <div class="tab-content" id="tab-list">
-        <div class="controls-bar">
-            <input type="text" id="searchInput" placeholder="施設名、都道府県、泉質、温泉地で検索...">
-            <button class="filter-btn" id="starFilter" onclick="toggleStarFilter()">★ リピートのみ</button>
-            <button class="filter-btn" id="kakeFilter" onclick="toggleKakeFilter()">♨ 掛け流しのみ</button>
-            <button class="sort-btn" id="sortBtn" onclick="toggleSort()"><i class="fas fa-sort"></i> <span id="sortLabel">件数順</span></button>
+        <div class="list-header-fixed">
+            <div class="controls-bar">
+                <input type="text" id="searchInput" placeholder="施設名、都道府県、泉質、温泉地で検索...">
+                <button class="filter-btn" id="starFilter" onclick="toggleStarFilter()">★ リピートのみ</button>
+                <button class="filter-btn" id="kakeFilter" onclick="toggleKakeFilter()">♨ 掛け流しのみ</button>
+                <button class="sort-btn" id="sortBtn" onclick="toggleSort()"><i class="fas fa-sort"></i> <span id="sortLabel">件数順</span></button>
+            </div>
+            <div class="filter-tags" id="typeFilters"></div>
+            <div class="results-info" id="resultsInfo"></div>
         </div>
-        <div class="filter-tags" id="typeFilters"></div>
-        <div class="results-info" id="resultsInfo"></div>
-        <div id="accordionContainer"></div>
+        <div class="list-scroll-area" id="accordionContainer"></div>
     </div>
 </div>
 
@@ -950,7 +962,7 @@ function jumpToList(key, val) {
     // Auto-open matching sections
     setTimeout(function() {
         document.querySelectorAll('.pref-section').forEach(function(s) { s.classList.add('active'); });
-        window.scrollTo({ top: document.getElementById('tab-list').offsetTop - 80, behavior: 'smooth' });
+        document.getElementById('accordionContainer').scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
 }
 
@@ -967,7 +979,7 @@ function jumpToListStar() {
     applyFilters();
     setTimeout(function() {
         document.querySelectorAll('.pref-section').forEach(function(s) { s.classList.add('active'); });
-        window.scrollTo({ top: document.getElementById('tab-list').offsetTop - 80, behavior: 'smooth' });
+        document.getElementById('accordionContainer').scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
 }
 
@@ -984,7 +996,7 @@ function jumpToListKake() {
     applyFilters();
     setTimeout(function() {
         document.querySelectorAll('.pref-section').forEach(function(s) { s.classList.add('active'); });
-        window.scrollTo({ top: document.getElementById('tab-list').offsetTop - 80, behavior: 'smooth' });
+        document.getElementById('accordionContainer').scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
 }
 
