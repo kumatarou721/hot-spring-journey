@@ -230,7 +230,25 @@
               RISK: <span id="val-risk" class="font-bold text-white">--</span>
             </div>
           </div>
-          
+
+          <div id="trend-slope-panel" class="hidden mt-3 bg-slate-900/50 rounded-lg p-3 border border-white/5">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Matrix Trend</span>
+              <span id="trend-stability" class="text-[9px] font-mono text-slate-500">--</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <div class="text-[9px] text-blue-400 font-bold mb-1">X (Strength)</div>
+                <div class="flex gap-1.5" id="trend-x-slopes"></div>
+              </div>
+              <div>
+                <div class="text-[9px] text-amber-400 font-bold mb-1">Y (Sentiment)</div>
+                <div class="flex gap-1.5" id="trend-y-slopes"></div>
+              </div>
+            </div>
+            <div id="divergence-alert" class="hidden mt-2 text-[10px] text-amber-300 bg-amber-900/20 border border-amber-500/20 rounded px-2 py-1"></div>
+          </div>
+
           <div id="leading-alert-box" class="hidden mt-3 p-2 bg-red-900/20 border border-red-500/30 rounded text-xs text-red-300 flex items-start gap-2">
             <span class="text-base">⚠️</span>
             <div>
@@ -714,6 +732,68 @@
       const sec = appData.sector_rotation || {};
       renderTags('flow-in', (sec.top_sectors || []).map(s => s.sector), 'bg-emerald-900/30 text-emerald-400 border-emerald-800');
       renderTags('flow-out', (sec.bottom_sectors || []).map(s => s.sector), 'bg-red-900/30 text-red-400 border-red-800');
+
+      // Trend Slope indicator (Ver 33.17)
+      renderTrendSlope(mh.trend);
+    }
+
+    function renderTrendSlope(trend) {
+      const panel = document.getElementById('trend-slope-panel');
+      if (!trend || !panel) return;
+
+      // Show panel
+      panel.classList.remove('hidden');
+
+      // Helper: slope → arrow + color class
+      function slopeChip(label, value, threshold) {
+        const th = threshold || 0.3;
+        const v = parseFloat(value) || 0;
+        let arrow, colorCls;
+        if (v > th)       { arrow = '↑'; colorCls = 'text-emerald-400 bg-emerald-900/40 border-emerald-700/50'; }
+        else if (v < -th) { arrow = '↓'; colorCls = 'text-red-400 bg-red-900/40 border-red-700/50'; }
+        else              { arrow = '→'; colorCls = 'text-slate-400 bg-slate-800/60 border-slate-600/40'; }
+        return `<div class="flex flex-col items-center px-1.5 py-0.5 rounded border text-center ${colorCls}">
+          <span class="text-[8px] opacity-60">${label}</span>
+          <span class="text-sm font-bold leading-none">${arrow}</span>
+          <span class="text-[8px] font-mono">${v >= 0 ? '+' : ''}${v.toFixed(1)}</span>
+        </div>`;
+      }
+
+      // X slopes
+      const xEl = document.getElementById('trend-x-slopes');
+      xEl.innerHTML = slopeChip('5d', trend['5d_x_slope']) +
+                       slopeChip('10d', trend['10d_x_slope']) +
+                       slopeChip('21d', trend['21d_x_slope']);
+
+      // Y slopes
+      const yEl = document.getElementById('trend-y-slopes');
+      yEl.innerHTML = slopeChip('5d', trend['5d_y_slope']) +
+                       slopeChip('10d', trend['10d_y_slope']) +
+                       slopeChip('21d', trend['21d_y_slope']);
+
+      // Regime stability badge
+      const stabEl = document.getElementById('trend-stability');
+      const stab = trend.regime_stability || 'unknown';
+      const hist5d = trend.regime_history_5d || [];
+      if (stab === 'stable') {
+        stabEl.textContent = `STABLE (${hist5d[0] || '--'})`;
+        stabEl.className = 'text-[9px] font-mono text-emerald-400/70';
+      } else if (stab === 'changing') {
+        stabEl.textContent = `CHANGING`;
+        stabEl.className = 'text-[9px] font-mono text-amber-400/70';
+      } else {
+        stabEl.textContent = stab.toUpperCase();
+        stabEl.className = 'text-[9px] font-mono text-slate-500';
+      }
+
+      // Divergence alert
+      const divEl = document.getElementById('divergence-alert');
+      if (trend.divergence_alert) {
+        divEl.classList.remove('hidden');
+        divEl.innerHTML = `⚡ ${trend.divergence_alert}`;
+      } else {
+        divEl.classList.add('hidden');
+      }
     }
 
     function updateBar(id, comp) {
