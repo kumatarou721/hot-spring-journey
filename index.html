@@ -714,9 +714,19 @@
       document.getElementById('val-risk').textContent = rs.risk_sentiment || '--';
 
       const alertBox = document.getElementById('leading-alert-box');
-      if (mh.leading_alert || mh.kill_switch?.active) {
+      const la = mh.leading_alert;
+      if (la || mh.kill_switch?.active) {
         alertBox.classList.remove('hidden');
-        document.getElementById('alert-desc').textContent = mh.leading_alert || "Market Circuit Breaker Active";
+        if (la && typeof la === 'object') {
+          document.getElementById('alert-title').textContent = la.title || 'ALERT';
+          document.getElementById('alert-desc').textContent = la.message || la.action || 'Market alert active';
+          if (la.level === 'WARNING') {
+            alertBox.classList.remove('bg-red-900/20', 'border-red-500/30', 'text-red-300');
+            alertBox.classList.add('bg-amber-900/20', 'border-amber-500/30', 'text-amber-300');
+          }
+        } else {
+          document.getElementById('alert-desc').textContent = la || 'Market Circuit Breaker Active';
+        }
       }
 
       // Tail Risk Warning (SKEW) - amber warning, separate from Kill Switch
