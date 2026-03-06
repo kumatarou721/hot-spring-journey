@@ -661,7 +661,9 @@
       if (!mh) return;
 
       document.getElementById('health-score').textContent = `${mh.total_score || 0}/100`;
-      document.getElementById('health-grade').textContent = mh.grade || '--';
+      const ksActive = mh.kill_switch?.active;
+      const gradeText = ksActive ? `${mh.grade || '--'} (KS)` : (mh.grade || '--');
+      document.getElementById('health-grade').textContent = gradeText;
       
       const regimeEl = document.getElementById('regime-badge');
       const regime = mh.regime || 'NEUTRAL';
