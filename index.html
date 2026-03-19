@@ -821,8 +821,13 @@
       const lt = sig.long_term || [];
       const sw = sig.swing || [];
 
-      document.getElementById('cnt-lt').textContent = lt.length;
-      document.getElementById('cnt-swing').textContent = sw.length;
+      const ltActive = lt.filter(i => !i.watch_only);
+      const ltWatch = lt.filter(i => i.watch_only);
+      const swActive = sw.filter(i => !i.watch_only);
+      const swWatch = sw.filter(i => i.watch_only);
+
+      document.getElementById('cnt-lt').textContent = ltActive.length || (ltWatch.length ? `W:${ltWatch.length}` : '0');
+      document.getElementById('cnt-swing').textContent = swActive.length || (swWatch.length ? `W:${swWatch.length}` : '0');
 
       renderCandidateList('list-lt', lt, 'LT');
       renderCandidateList('list-swing', sw, 'SW');
@@ -838,27 +843,41 @@
         container.innerHTML = '<div class="text-xs text-slate-600 italic p-2 text-center">No Signals</div>';
         return;
       }
-      
-      container.innerHTML = items.map(item => {
+
+      const allWatchOnly = items.every(i => i.watch_only);
+      const headerHtml = allWatchOnly
+        ? '<div class="text-[10px] text-amber-500/80 font-bold text-center mb-1 py-1 bg-amber-900/10 rounded border border-amber-500/20">WATCH ONLY — Action=NONE (0% Position)</div>'
+        : '';
+
+      container.innerHTML = headerHtml + items.map(item => {
+        const isWatch = item.watch_only;
         const score = type === 'LT' ? item.LT_Score_V2 : item.Swing_Score_V2;
         const tags = (item.Score_V2_Tags || []).slice(0, 2).map(t => t.replace('#', '')).join(', ');
-        
-        // 警告の処理（マウスホバーで理由表示）
+
         const warnings = item.Score_V2_Warnings || [];
         const hasWarning = warnings.length > 0;
-        const warningIcon = hasWarning 
-          ? `<span class="text-amber-400 cursor-help ml-1" title="${warnings.join(', ')}">⚠️</span>` 
+        const warningIcon = hasWarning
+          ? `<span class="text-amber-400 cursor-help ml-1" title="${warnings.join(', ')}">⚠️</span>`
           : '';
-        
+
+        const borderClass = isWatch ? 'border-amber-500/20' : 'border-white/5';
+        const bgClass = isWatch ? 'bg-slate-900/30 opacity-60' : 'bg-slate-800/50';
+        const tickerClass = isWatch ? 'text-slate-400' : 'text-white';
+        const scoreClass = isWatch ? 'text-slate-500' : 'text-blue-400';
+        const watchBadge = isWatch
+          ? '<span class="text-[8px] bg-amber-900/30 text-amber-400 border border-amber-500/30 px-1 rounded">WATCH</span>'
+          : '';
+
         return `
-          <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded border border-white/5 hover:bg-white/5 transition-colors group">
+          <div class="flex justify-between items-center ${bgClass} p-2 rounded border ${borderClass} hover:bg-white/5 transition-colors group">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-white font-mono">${item.Ticker}</span>
+              <span class="font-bold ${tickerClass} font-mono">${item.Ticker}</span>
+              ${watchBadge}
               ${warningIcon}
               <span class="text-[10px] text-slate-500 truncate max-w-[120px] group-hover:text-slate-300 transition-colors">${tags}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono text-blue-400 font-bold">V2:${score}</span>
+              <span class="text-[10px] font-mono ${scoreClass} font-bold">V2:${score}</span>
             </div>
           </div>
         `;
