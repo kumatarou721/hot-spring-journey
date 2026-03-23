@@ -466,15 +466,6 @@
           </details>
         </div>
 
-        <div class="glass-hud rounded-xl p-4 border-l-2 border-l-red-500">
-           <div class="flex justify-between items-center mb-3">
-            <h3 class="font-display font-bold text-sm text-red-400">DAY TRADE</h3>
-            <span id="dt-bias" class="text-[10px] font-mono text-slate-400">BIAS: --</span>
-          </div>
-          <button onclick="copyPrompt('short')" class="w-full bg-slate-800 hover:bg-red-900/30 border border-slate-700 hover:border-red-500/50 text-red-200 py-3 rounded text-xs font-bold transition-all">
-            COPY INTRADAY PROMPT
-          </button>
-        </div>
 
       </div>
       
@@ -901,11 +892,6 @@
         document.getElementById('pf-badge').classList.remove('hidden');
       }
 
-      const dtPrompt = appData.prompts?.short || "";
-      const biasMatch = dtPrompt.match(/Bias\*\*:\s*([A-Z\s-]+)/);
-      if (biasMatch) {
-        document.getElementById('dt-bias').textContent = `BIAS: ${biasMatch[1].trim()}`;
-      }
     }
 
     // --- RESTORED: Cross-Validation Logic ---
