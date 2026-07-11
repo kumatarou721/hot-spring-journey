@@ -93,7 +93,8 @@ header h1{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,7.5v
 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 .card{background:var(--panel);border:1px solid var(--panel-edge);border-radius:4px;
-  padding:26px 26px 28px;position:relative}
+  padding:26px 26px 28px;position:relative;
+  box-shadow:0 1px 2px rgba(40,30,10,.05),0 10px 22px -14px rgba(40,30,10,.2)}
 .card::before{content:'';position:absolute;left:0;top:0;width:42px;height:3px;background:var(--vermil)}
 .card h3{font-family:var(--serif);font-weight:700;font-size:1.06rem;margin:0 0 20px;
   padding-bottom:13px;border-bottom:1px solid var(--line);letter-spacing:.04em;
@@ -112,6 +113,9 @@ header h1{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,7.5v
 @keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .bar .ct{width:30px;flex:none;text-align:left;font-family:var(--display);font-weight:700;
   color:var(--indigo);font-feature-settings:"lnum" 1}
+.bar.clk{cursor:pointer}
+.bar.clk:hover .nm{color:var(--indigo);font-weight:700}
+.bar.clk:hover .fl{background:linear-gradient(90deg,var(--vermil),var(--vermil2))}
 .split{display:flex;height:30px;border:1px solid var(--line);overflow:hidden;margin:8px 0 6px}
 .split>div{display:flex;align-items:center;justify-content:center;color:#f6efe1;
   font-family:var(--display);font-weight:700;font-feature-settings:"lnum" 1;font-size:.92rem}
@@ -140,6 +144,7 @@ header h1{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,7.5v
 .pin{cursor:pointer;transform-box:fill-box;transform-origin:center;vector-effect:non-scaling-stroke}
 .pin.rep{fill:var(--rep);filter:drop-shadow(0 0 1.4px rgba(181,58,40,.55))}
 .pin.plain{fill:var(--plain);opacity:.82}
+.pin.dim{opacity:.1;pointer-events:none}
 .pin:hover{stroke:var(--ink);stroke-width:1.3}
 #map.reveal .pin{animation:drop .55s cubic-bezier(.2,.85,.25,1) both}
 @keyframes drop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
@@ -215,12 +220,25 @@ header h1{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,7.5v
 .row .badge.susp{background:rgba(163,122,43,.14);color:var(--gold);border:1px solid rgba(163,122,43,.45)}
 .row.closed{opacity:.55}.row.closed .nm{text-decoration:line-through}
 
+/* キーボード操作時のフォーカスを可視化（マウスクリックでは出ない） */
+.tab-btn:focus-visible,.fbtn:focus-visible,.chip:focus-visible,
+.map-ctl button:focus-visible,.row .gmap:focus-visible{
+  outline:2px solid var(--vermil);outline-offset:2px}
+
 @media(max-width:680px){
+  header{padding:36px 16px 24px}
   .stats{grid-template-columns:repeat(3,1fr)}
   .stat:nth-child(4),.stat:nth-child(5),.stat:nth-child(6){border-top:1px solid var(--line)}
   .stat:nth-child(4){border-left:none}
   .grid2{grid-template-columns:1fr}
   .stamp{display:none}
+  .toolbar{gap:8px}
+  #search{flex-basis:100%;min-width:0}
+  #prefSel{flex:1;max-width:none}
+  /* 一覧行は 2 行に折り返す: 1 行目 = ★+名前+バッジ+地図、2 行目 = 泉質 */
+  .row{flex-wrap:wrap;row-gap:3px}
+  .row .nm{white-space:normal;overflow:visible;min-width:55%}
+  .row .izumi{order:2;flex:1 1 100%;max-width:none;text-align:left}
 }
 </style>
 </head>
@@ -300,7 +318,7 @@ header h1{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,7.5v
       <div class="legend" style="margin-top:14px">
         <span><i style="background:var(--rep)"></i>リピ有り（再訪）</span>
         <span><i style="background:var(--plain)"></i>訪問</span>
-        <span style="margin-left:auto">ホイール/ピンチで拡大・ドラッグで移動 ・ 座標は Google マイマップ由来</span>
+        <span style="margin-left:auto">ホイール/ピンチで拡大・ドラッグで移動 ・ ピンをクリックで詳細 ・ 一覧の絞り込み中は該当外のピンが薄く表示</span>
       </div>
     </div>
   </div>
@@ -350,11 +368,11 @@ function countUp(el,to){
  ['sCap',META.capital],['sIz',META.izumiN],['sWish',META.wish]]
   .forEach(([id,v])=>countUp(document.getElementById(id),v));
 
-// pref chart
+// pref chart（クリックで一覧をその都道府県で絞り込み — 泉質チャートと同じ挙動）
 (function(){
   const max = META.prefRank.length ? META.prefRank[0][1] : 1;
   document.getElementById('prefChart').innerHTML = META.prefRank.map(([nm,c])=>
-    `<div class="bar"><span class="nm">${nm}</span>`+
+    `<div class="bar clk" onclick="filterByPref('${nm}')" title="クリックで一覧を絞り込み"><span class="nm">${nm}</span>`+
     `<span class="tr"><span class="fl" style="width:${Math.round(c/max*100)}%"></span></span>`+
     `<span class="ct">${c}</span></div>`).join('');
 })();
@@ -364,7 +382,7 @@ function countUp(el,to){
   const cats=META.izumiCats;
   const max=Math.max(1,...cats.map(c=>c[1]));
   document.getElementById('izumiChart').innerHTML = cats.map(([nm,c],i)=>
-    `<div class="bar" style="cursor:pointer" onclick="filterByCat(${i})" title="クリックで一覧を絞り込み"><span class="nm">${nm}</span>`+
+    `<div class="bar clk" onclick="filterByCat(${i})" title="クリックで一覧を絞り込み"><span class="nm">${nm}</span>`+
     `<span class="tr"><span class="fl" style="width:${Math.round(c/max*100)}%"></span></span>`+
     `<span class="ct">${c}</span></div>`).join('');
   document.getElementById('izN').textContent = META.izumiN;
@@ -396,6 +414,8 @@ function gmapURL(o){
     body+=`<circle class="pin ${o.rep?'rep':'plain'}" cx="${o.x}" cy="${o.y}" r="${o.rep?3.4:2.6}" data-i="${i}"/>`;}
   svg.innerHTML=body;
   const pins=[...svg.querySelectorAll('.pin')];
+  // 一覧の絞り込みを地図に反映するため、レコード→ピン要素の対応を持つ（render() が参照）
+  sorted.forEach((o,i)=>{o._pin=pins[i];});
 
   // ---- pan / zoom（viewBox 操作。ホイール・ドラッグ・ピンチ・ボタン） ----
   const VB={x:0,y:0,w:META.W,h:META.H};
@@ -484,8 +504,12 @@ function gmapURL(o){
     tip.style.left=Math.min(cx+14,window.innerWidth-260)+'px';
     tip.style.top=(cy+14)+'px';
     tip.innerHTML=`<span class="tclose" title="閉じる">&#10005;</span>`+tipBody(o)+
-      `<br><a href="${gmapURL(o)}" target="_blank" rel="noopener">Google マップで開く &#8599;</a>`;
+      `<br><a href="#" class="tlist">一覧で表示</a> ・ `+
+      `<a href="${gmapURL(o)}" target="_blank" rel="noopener">Google マップ &#8599;</a>`;
+    // 施設名に引用符が混ざっても壊れないよう、onclick 文字列でなくリスナーで結線する
+    tip.querySelector('.tlist').onclick=ev=>{ev.preventDefault();closeTip();showInList(o.n);};
   }
+  function closeTip(){sticky=false;tip.classList.remove('sticky');tip.style.display='none';}
   svg.addEventListener('mousemove',e=>{
     if(sticky||ptrs.size) return;
     const t=e.target;
@@ -501,7 +525,7 @@ function gmapURL(o){
     if(suppressClick){suppressClick=false;return;}  // ピンを開いた直後の click は無視
     if(!sticky) return;
     if(e.target.classList&&e.target.classList.contains('tclose')||!tip.contains(e.target)){
-      sticky=false;tip.classList.remove('sticky');tip.style.display='none';
+      closeTip();
     }
   });
 })();
@@ -545,14 +569,41 @@ ONSEN.forEach(o=>{o._h=norm([o.n,o.pref,o.iz||'',o.area||''].join(' '));});
   });
 })();
 
+// 全フィルタを初期状態に戻す（チャート/地図からのジャンプ時、前のフィルタで空振りしないため）
+function resetFilters(){
+  fRep=fWish=fVisited=false;
+  ['fRep','fVisited','fWish'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  activeCats.clear();
+  document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('active'));
+  $prefSel.value='';
+  $search.value='';
+}
+function gotoList(){document.querySelector('.tab-btn[data-tab="ls"]').click();}
+
 // 概要タブの泉質チャートから飛ぶ: 一覧タブへ切替 + そのカテゴリだけ ON
 function filterByCat(i){
-  activeCats.clear();
+  resetFilters();
   activeCats.add(i);
   document.querySelectorAll('#catChips .chip').forEach(b=>
     b.classList.toggle('active',+b.dataset.cat===i));
   render();
-  document.querySelector('.tab-btn[data-tab="ls"]').click();
+  gotoList();
+}
+
+// 概要タブの都道府県チャートから飛ぶ: 一覧タブへ切替 + その県だけ選択
+function filterByPref(p){
+  resetFilters();
+  $prefSel.value=p;
+  render();
+  gotoList();
+}
+
+// 地図の吹き出し「一覧で表示」: 一覧タブへ切替 + 施設名で検索
+function showInList(name){
+  resetFilters();
+  $search.value=name;
+  render();
+  gotoList();
 }
 
 function render(){
@@ -568,6 +619,9 @@ function render(){
   });
   document.getElementById('lsInfo').textContent =
     `${rows.length} 件` + (rows.length!==META.listTotal?` / 全 ${META.listTotal} 件`:'');
+  // 一覧の絞り込みを地図に反映（絞り込み中は該当外のピンを薄く）
+  const shown=new Set(rows), filtering=rows.length!==META.listTotal;
+  ONSEN.forEach(o=>{if(o._pin)o._pin.classList.toggle('dim',filtering&&!shown.has(o));});
   const groups={};
   for(const o of rows){(groups[o.region]=groups[o.region]||[]).push(o);}
   const order=['首都圏','首都圏以外'];
